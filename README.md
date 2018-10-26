@@ -111,4 +111,4 @@ Thinking about integrating with:
 * Running node version 6.11 or above. 
 
 # License
-MIT
+MIT © [webdevstar](https://github.com/webdevstar)
