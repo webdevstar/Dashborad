@@ -1,8 +1,6 @@
 import React from 'react';
 import Fluxxor from 'fluxxor';
-import { SERVICES } from '../services/services';
 import { Link } from 'react-router';
-import { routes } from '../routes/routes';
 import { getHumanDate } from '../utils/Utils.js';
 
 const FluxMixin = Fluxxor.FluxMixin(React),
@@ -10,10 +8,6 @@ const FluxMixin = Fluxxor.FluxMixin(React),
 
 export const FactDetail = React.createClass({
   mixins: [FluxMixin, StoreWatchMixin],
-
-  factId: null,
-  next: null,
-  prev: null,
 
   _loadFactDetail: function (id) {
     this.getFlux().actions.FACTS.load_fact(id);
@@ -30,14 +24,6 @@ export const FactDetail = React.createClass({
   componentWillReceiveProps: function (nextProps) {
     this.setState(this.getStateFromFlux());
     this._loadFactDetail(nextProps.factId);
-  },
-
-  componentWillMount: function() {
-  },
-
-  shouldComponentUpdate: function(nextProps, nextState) {
-    this._getAdjacentArticles(nextProps.factId);
-    return true;
   },
 
   render() {
@@ -90,8 +76,11 @@ export const FactDetail = React.createClass({
 
     let factDetail = this.state.factDetail;
     let fact = factDetail.fact;
-    let dateProcessed = getHumanDate(factDetail.id);
-    let datePublished = fact.published_at; //getHumanDate(fact.published_at);
+    let dateProcessed = getHumanDate(factDetail.date);
+    let datePublished = this._validDateString(fact.published_at); // NB: Using string for date here due to mixed formatting
+
+    let prev = this.state.factLinks.prev;
+    let next = this.state.factLinks.next;
 
     return (
       <div id="fact">
@@ -110,12 +99,12 @@ export const FactDetail = React.createClass({
           <div className="row whitespace">
             <div className="col-md-3">
               <div className="details">
-                {this.prev && <Link to={`/site/${this.props.siteKey}/facts/${this.prev.id}`} className="truncate">&larr; {this.prev.title}</Link>}
+                {prev && <Link to={`/site/${this.props.siteKey}/facts/detail/${prev.id}`} className="truncate">&larr; {prev.title}</Link>}
               </div>
             </div>
             <div className="col-md-6">
               <div className="details">
-                {this.next && <Link to={`/site/${this.props.siteKey}/facts/${this.next.id}`}>{this.next.title} &rarr;</Link>}
+                {next && <Link to={`/site/${this.props.siteKey}/facts/detail/${next.id}`}>{next.title} &rarr;</Link>}
               </div>
               <div className="article">
                 <h1>{fact.title}</h1>
@@ -154,48 +143,11 @@ export const FactDetail = React.createClass({
     );
   },
 
-  _getAdjacentArticles(id) {
-    let loadedFacts = this.state.facts;
-    let date = this._getDateWithId(id);
-    if (!loadedFacts.length > 0 || date === false) {
-      return;
+  _validDateString(dateString) {
+    if (dateString.length !== 10) {
+      return "";
     }
-    let section = loadedFacts.find(x => x.year === date.year && x.month === date.month && x.day === date.day);
-    let sectionIndex = loadedFacts.indexOf(section);
-    let facts = section.facts;
-    let fact = facts.find(x => x.id === id);
-    let index = facts.indexOf(fact);
-    let l = facts.length;
-
-    this.prev = this.next = null;
-    if (index-1 < l) {
-      this.prev = facts[index-1];
-    }
-    if (index+1 < l) {
-      this.next = facts[index+1];
-    }
-
-    // prev section
-    if (!this.prev && sectionIndex-1 >= 0) {
-      let prevFacts = loadedFacts[sectionIndex-1].facts;
-      this.prev = prevFacts[prevFacts.length-1];
-    }
-    // next section
-    if (!this.next && sectionIndex+1 < loadedFacts.length) {
-      let nextFacts = loadedFacts[sectionIndex+1].facts;
-      this.next = nextFacts[0];
-    }
-  },
-
-  _getDateWithId(id) {
-    if (id.length < 10) {
-      return false;
-    }
-    return {
-      "year": parseInt(id.substr(0,4) ,10),
-      "month": parseInt(id.substr(5,2), 10),
-      "day": parseInt(id.substr(8,2), 10)
-    };
+    return dateString;
   }
 
 });
