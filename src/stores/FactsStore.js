@@ -1,20 +1,28 @@
 import Fluxxor from 'fluxxor';
 import { Actions } from '../actions/Actions';
+import { flattenUnique } from '../utils/Utils.js';
+import { getFilteredResults } from '../utils/Fact.js';
 
 export const FactsStore = Fluxxor.createStore({
   initialize() {
     this.dataStore = {
       facts: [],
+      tags: [],
       error: null,
       loading: false,
       pageSize: 50,
       skip: 0,
       pageState: {
         scrollTop: 0,
-        excludedHeight: 0
+        excludedHeight: 0,
+        filter: "",
       },
       
-      factDetail: null
+      factDetail: null,
+      factLinks: {
+        prev: null,
+        next: null
+      }
     };
 
     this.bindActions(
@@ -38,31 +46,21 @@ export const FactsStore = Fluxxor.createStore({
   handleLoadFactsSuccess(payload) {
     this.dataStore.loading = false;
     this.dataStore.error = null;
-    this.dataStore.facts = this._mergeResults(payload.response);
+    this.dataStore.facts = this._processResults(payload.response);
     this._incrementSkip(payload.response);
     this.emit("change");
   },
 
-  _mergeResults(results) {
-    // Merge sections with matching dates
-    var sections = this.dataStore.facts.concat(results);
-    sections.reduce(function (a, b, i, arr) {
-      if (a.year === b.year && a.month === b.month && a.day === b.day) {
-        a.facts = a.facts.concat(b.facts);
-        arr.splice(i, 1);
-      }
-      return b;
-    }, []);
-    return sections;
+  _processResults(results) {
+    var facts = this.dataStore.facts.concat(results);
+    // update list of unique tags
+    this.dataStore.tags = flattenUnique( facts.map(x => x.tags) );
+    return facts;
   },
 
   _incrementSkip(results) {
     // Total no. of items in each new section should be equal to page size...
-    var l = results.length;
-    var count = 0;
-    while(l--) {
-      count += results[l].facts.length;
-    }
+    var count = results.length;
     if (count === this.dataStore.pageSize) {
       return this.dataStore.skip += this.dataStore.pageSize;
     }
@@ -81,7 +79,30 @@ export const FactsStore = Fluxxor.createStore({
 
   handleLoadFact(payload) {
     this.dataStore.factDetail = payload.response;
+    this._getAdjacentArticles(this.dataStore.factDetail.id);
     this.emit("change");
-  }
+  },
+
+  // get prev and next fact using fact detail id
+  _getAdjacentArticles(id) { 
+    let loadedFacts = this.dataStore.facts;
+    let filter = this.dataStore.pageState.filter;
+    let facts = getFilteredResults(loadedFacts, filter);
+
+    if (!facts.length > 0) {
+      return;
+    }
+    let fact = facts.find(x => x.id === id);
+    let index = facts.indexOf(fact);
+    let l = facts.length;
+
+    this.dataStore.factLinks.prev = this.dataStore.factLinks.next = null;
+    if (index-1 < l) {
+      this.dataStore.factLinks.prev = facts[index-1];
+    }
+    if (index+1 < l) {
+      this.dataStore.factLinks.next = facts[index+1];
+    }
+  },
 
 });
