@@ -1,6 +1,5 @@
 import Fluxxor from 'fluxxor';
 import {Actions} from '../actions/Actions';
-import moment from 'moment';
 
 export const DataStore = Fluxxor.createStore({
     initialize(profile) {
@@ -8,11 +7,10 @@ export const DataStore = Fluxxor.createStore({
       this.dataStore = {
           userProfile: profile,
           timespanType: 'customMonth',
-          datetimeSelection: 'October 2016',//moment().format(Actions.constants.TIMESPAN_TYPES.days.format),
-          categoryType: 'keyword',
+          datetimeSelection: 'November 2016',//moment().format(Actions.constants.TIMESPAN_TYPES.days.format),
+          categoryType: '',
           siteKey: '',
           activities: [],
-          action: '',
           popularTerms: [],
           timeSeriesGraphData: {},
           sentimentChartData: [],
@@ -20,7 +18,7 @@ export const DataStore = Fluxxor.createStore({
           timeseriesFromDate: false,
           timeseriesToDate: false,
           associatedKeywords: new Map(),
-          categoryValue: 'benghazi',
+          categoryValue: false,
           defaultResults: []
       }
       
@@ -68,7 +66,7 @@ export const DataStore = Fluxxor.createStore({
         let termSummaryMap = new Map();
         let termColorMap = new Map();
         let maxMentionCount = 0;
-        let barColors = ['#fdd400', '#84b761', '#b6d2ff', '#CD0D74', '#2f4074'];
+        let barColors = ['#fdd400', '#84b761', '#b6d2ff', '#CD0D74', '#2f4074', '#7e6596'];
         
         if(this.dataStore.timeSeriesGraphData && this.dataStore.timeSeriesGraphData.graphData){
             //hash the time series data by the epoch time as we'll use this to render 
@@ -136,13 +134,9 @@ export const DataStore = Fluxxor.createStore({
 
         this.indexTimeSeriesResponse();
 
-        if(this.dataStore.timeSeriesGraphData.aggregatedCounts && this.dataStore.timeSeriesGraphData.aggregatedCounts.length > 0){
+        if(!this.dataStore.categoryValue && this.dataStore.timeSeriesGraphData.aggregatedCounts && this.dataStore.timeSeriesGraphData.aggregatedCounts.length > 0){
            this.defaultSearchTermToMostMentioned(this.dataStore.timeSeriesGraphData.mostPopularTerm);
         }
-
-        this.dataStore.action = 'loadedGraphData';
-
-        return;
     },
     
     handleChangeDate(changedData){
@@ -151,7 +145,6 @@ export const DataStore = Fluxxor.createStore({
         this.dataStore.timespanType = changedData.timespanType;
         this.refreshGraphData(changedData.timeSeriesResponse);
         this.dataStore.renderMap = true;
-        this.dataStore.action = 'changedSearchTerms';
         
         this.emit("change");
     },
@@ -159,17 +152,14 @@ export const DataStore = Fluxxor.createStore({
     handleChangeSearchTerm(changedData){
         this.dataStore.associatedKeywords = new Map();
         this.dataStore.categoryValue = changedData.newFilter;
-        this.dataStore.categoryType = changedData.searchType;
-        this.dataStore.action = 'changedSearchTerms';
+        this.refreshGraphData(changedData.timeSeriesResponse);
+        this.dataStore.categoryType = "keyword";
         this.dataStore.renderMap = true;
         
         this.emit("change");
     },
     
     mapDataUpdate(associatedKeywords){
-        //all assoicated terms shoul dbe enabled on the initial data load of a term.
-        let enableAllTermsByDefault = this.dataStore.associatedKeywords.size === 0;
-        
         this.dataStore.associatedKeywords = associatedKeywords;
         this.dataStore.renderMap = false;
         this.emit("change");
