@@ -9,7 +9,7 @@ import '../styles/SentimentTreeView.css';
 import numeralLibs from 'numeral';
 
 const FluxMixin = Fluxxor.FluxMixin(React),
-      parentTermsName = "Relevant Terms",
+      parentTermsName = "Term Filters",
       StoreWatchMixin = Fluxxor.StoreWatchMixin("DataStore");
 
 const styles = {
@@ -181,16 +181,8 @@ export const SentimentTreeview = React.createClass({
             children: []
         };
 
-        let noRelevantTermsItemsRoot = {
-            name: `None`,
-            folderKey: 'noneFolder',
-            checked: true,
-            toggled: true,
-            children: []
-        };
-
         let popularItemsRoot = {
-            name: 'Top 5',
+            name: 'Top 5 Terms',
             folderKey: 'top5Keywords',
             checked: true,
             toggled: true,
@@ -201,12 +193,12 @@ export const SentimentTreeview = React.createClass({
             name: 'Other Terms',
             folderKey: 'otherKeywords',
             checked: true,
-            toggled: true,
+            toggled: false,
             children: []
         };
 
         let itemCount = 0;
-        let popularTermsTotal = 0, otherTotal = 0, noneTotal = 0;
+        let popularTermsTotal = 0, otherTotal = 0;
 
         for (var [term, value] of termsMap.entries()) {
             let newEntry = {
@@ -216,16 +208,11 @@ export const SentimentTreeview = React.createClass({
                     eventCount: value.mentions
             };
 
-            if(term === "none"){
-                newEntry.parent = noRelevantTermsItemsRoot;
-                noRelevantTermsItemsRoot.children.push(newEntry);
-                newEntry.name = this.state.categoryValue;
-                noneTotal += value.enabled ? value.mentions : 0;
-            }else if(itemCount++ < 5){
+            if(term !== "none" && itemCount++ < 5){
                 newEntry.parent = popularItemsRoot;
                 popularItemsRoot.children.push(newEntry);
                 popularTermsTotal += value.enabled ? value.mentions : 0;
-            }else{
+            }else if(term !== "none"){
                 newEntry.parent = otherItemsRoot;
                 otherItemsRoot.children.push(newEntry);
                 otherTotal += value.enabled ? value.mentions : 0;
@@ -237,13 +224,12 @@ export const SentimentTreeview = React.createClass({
         }
 
         rootItem.children.push(popularItemsRoot);
-        rootItem.children.push(noRelevantTermsItemsRoot);
 
         if(otherItemsRoot.children.length > 0){
             rootItem.children.push(otherItemsRoot);
         }
         
-        rootItem.eventCount = popularTermsTotal + otherTotal + noneTotal;
+        rootItem.eventCount = popularTermsTotal + otherTotal;
 
         return rootItem;
   },
@@ -338,7 +324,7 @@ export const SentimentTreeview = React.createClass({
   Header(props) {
         const style = props.style;
         let self = this;
-        const termStyle = { paddingLeft: '3px', fontWeight: 800, fontSize: '14px', color: '#337ab7',  width: '100%' };
+        const termStyle = { paddingLeft: '3px', fontWeight: 800, fontSize: '12px', color: '#337ab7',  width: '100%' };
         const categoryStyle = { paddingLeft: '3px', fontSize: '14px', color: '#fff', fontWeight: 600,  width: '100%'};
         let badgeClass = (props.node.checked || props.node.children) && props.node.eventCount > 0 ? "badge" : "badge badge-disabled";
         let isNodeTypeCategory = props.node.children && props.node.children.length > 0;
@@ -351,7 +337,7 @@ export const SentimentTreeview = React.createClass({
                     <input type="checkbox"
                         checked={props.node.checked}
                         onChange={self.onChange.bind(this, props.node)}/>
-                    <span className={termClassName} onClick={this.termSelected.bind(this, props.node)} style={ !isNodeTypeCategory ? termStyle : categoryStyle }>{(!isNodeTypeCategory ? "#" : "") + props.node.name} </span>
+                    <span className={termClassName} onClick={this.termSelected.bind(this, props.node)} style={ !isNodeTypeCategory ? termStyle : categoryStyle }>{props.node.name} </span>
                     {props.node.highlighted ? onlyLink : ""}
                 </div>
                 <div style={props.node.name === parentTermsName ? style.parentBadge : style.badge} className="col-md-2">
