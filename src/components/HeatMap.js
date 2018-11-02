@@ -23,8 +23,6 @@ const FluxMixin = Fluxxor.FluxMixin(React),
       StoreWatchMixin = Fluxxor.StoreWatchMixin("DataStore");
 const PARELLEL_TILE_LAYER_RENDER_LIMIT = 200;
 const SENTIMENT_FIELD = 'neg_sentiment';
-const TERM_NAME_FIELD = "f1";
-const TERM_MENTIONS_FIELD = "f2";
 const defaultClusterSize = 40;
 
 export const HeatMap = React.createClass({
@@ -94,7 +92,6 @@ export const HeatMap = React.createClass({
 		  info.update = props => {
             let selectionType = this.state.categoryType;
             let mainSearchEntity = this.state.categoryValue;
-            let associatedTerms = this.state.associatedKeywords;
             let numberOfDisplayedTerms = 0;
             let filters = 0;
             let maxTerms = 4;
@@ -174,7 +171,7 @@ export const HeatMap = React.createClass({
     
     this.map.selectedTerm = this.state.categoryValue;
     this.map.datetimeSelection = this.state.datetimeSelection;
-
+    this.map.dataSource = this.state.dataSource;
     this.map.on('moveend',() => {
       this.viewportChanged();
     });
@@ -302,9 +299,14 @@ export const HeatMap = React.createClass({
    },
 
   mapMarkerFlushCheck(){
-      if(this.map.selectedTerm !== this.state.categoryValue || this.map.datetimeSelection !== this.state.datetimeSelection || this.state.renderMap || this.viewportChanged){
+      if(this.map.selectedTerm !== this.state.categoryValue || 
+         this.map.datetimeSelection !== this.state.datetimeSelection || 
+         this.map.dataSource !== this.state.dataSource || 
+         this.state.renderMap || this.viewportChanged){
+
           this.map.datetimeSelection =  this.state.datetimeSelection;
           this.map.selectedTerm = this.state.categoryValue;
+          this.map.dataSource = this.state.dataSource;
 
           this.clearMap();
       }
@@ -337,7 +339,7 @@ export const HeatMap = React.createClass({
   },
 
   updateDataStore(errors, bbox, filters){
-      let aggregatedAssociatedTermMentions = new Map(), aggregatedLocations = new Map();
+      let aggregatedAssociatedTermMentions = new Map();
       let self = this;
       let weightedSentiment = weightedMean(this.weightedMeanValues) * 100;
       //bind the weigthed sentiment to the bullet chart data provider
@@ -400,7 +402,8 @@ export const HeatMap = React.createClass({
     let self = this;
     this.weightedMeanValues = [];
 
-    SERVICES.getHeatmapTiles(siteKey, this.state.timespanType, zoom, this.state.categoryValue, this.state.datetimeSelection, bbox, this.filterSelectedAssociatedTerms(), [this.state.selectedLocationCoordinates], 
+    SERVICES.getHeatmapTiles(siteKey, this.state.timespanType, zoom, this.state.categoryValue, this.state.datetimeSelection, 
+                             bbox, this.filterSelectedAssociatedTerms(), [this.state.selectedLocationCoordinates], Actions.DataSources(this.state.dataSource), 
             (error, response, body) => {
                 if (!error && response.statusCode === 200) {
                     self.createLayers(body, bbox)
@@ -415,11 +418,11 @@ export const HeatMap = React.createClass({
     let self = this;
 
     if(response && response.data){
-        let graphQLResponse = response.data[Object.keys(response.data)[0]];
-        if(graphQLResponse && graphQLResponse.features && graphQLResponse.edges){
-            eachLimit(graphQLResponse.features, PARELLEL_TILE_LAYER_RENDER_LIMIT, (tileFeature, cb) => {
+        const { features, edges } = response.data;
+        if(features && edges){
+            eachLimit(features.features, PARELLEL_TILE_LAYER_RENDER_LIMIT, (tileFeature, cb) => {
                  self.processMapCluster(tileFeature, cb);
-            }, errors => self.updateDataStore(errors, bbox, graphQLResponse.edges || []));
+            }, errors => self.updateDataStore(errors, bbox, edges.edges || []));
         }else{
             self.updateDataStore('Invalid GrphQL Service response', bbox, undefined);
         }
