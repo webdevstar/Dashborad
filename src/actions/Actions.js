@@ -1,33 +1,5 @@
 import {SERVICES} from '../services/services';
 
-const ENGLISH_LANGUAGE = "en";
-
-function GetSearchEdges(siteKey, languageCode, callback){
-    SERVICES.getDefaultSuggestionList(siteKey, languageCode, (error, response, body) => {
-            if (!error && response.statusCode === 200) {
-                 callback(body.data.search.edges);
-            }else{
-                 throw new Error(`[${error}] occured while processing entity list request`);
-            }
-     });
-}
-
-function GetTimeSeries(datetimeSelection, timespanType, siteKey, callback, searchTerm){
-     let selectedTerm = searchTerm ? `kw-${searchTerm}` : "top5";
-
-     if(datetimeSelection && timespanType){
-           SERVICES.getPopularTermsTimeSeries(siteKey, datetimeSelection, timespanType, selectedTerm)
-                   .subscribe(response => callback(response, undefined)
-                   , error => {
-                       let emptyTimeSeriesResponse = {labels: [], graphData: []};
-
-                       let errMsg = `The requested graph dataset [${datetimeSelection}, ${selectedTerm}] is unavailable`;
-                       console.error(errMsg);
-                       callback(emptyTimeSeriesResponse, errMsg);
-                   });
-     }
-}
-
 const constants = {
            SENTIMENT_JSON_MAPPING : {
                 "0": -5,
@@ -45,7 +17,7 @@ const constants = {
                     format: "YYYY-MM", blobFormat: "[month]-YYYY-MM", rangeFormat: "month"
                 },
                 'weeks': {
-                    format: "YYYY-WW", blobFormat: "[week]-YYYY-WW", rangeFormat: "week"
+                    format: "YYYY-WW", blobFormat: "[week]-YYYY-WW", rangeFormat: "isoweek"
                 },
                 'customDate': {
                     format: "MM/DD/YYYY", reactWidgetFormat: "MMM Do YYYY", blobFormat: "[day]-YYYY-MM-DD", rangeFormat: "day"
@@ -57,6 +29,12 @@ const constants = {
                     format: "MMMM YYYY", reactWidgetFormat: "MMMM YYYY", blobFormat: "[month]-YYYY-MM", rangeFormat: "month"
                 }
            },
+           DATA_SOURCES: new Map([["all", {"display": "All", "sourceValues":[], "icon": "fa fa-share-alt", "label": "All"}], 
+                            ["facebook", {"display": "Facebook", "sourceValues":["facebook-messages", "facebook-comments"], "icon": "fa fa-facebook-official", "label": ""}], 
+                            ["twitter", {"display": "Twitter", "sourceValues":["twitter"], "label": "", "icon": "fa fa-twitter"}], 
+                            ["acled", {"display": "acled", "sourceValues":["acled"], "label": "", "icon": "fa fa-font"}],
+                            ["tadaweb", {"display": "Tadaweb", "sourceValues":["tadaweb"], "label": "", "icon": "fa fa-text-width"}]
+                          ]),
            MOMENT_FORMATS: {
                "timeScaleDate": "MM/DD/YY HH:00"
            },
@@ -75,17 +53,11 @@ const constants = {
              'sec': 'sector',
              'st': 'status'
            },
-           HEATMAP : {
-               RETRIEVE_HEATMAP_TILE: "HEATMAP"
-           },
-           GRAPHING : {
-               LOAD_GRAPH_DATA: "LOAD:GRAPH_DATA",
-               CHANGE_TIME_SCALE: "EDIT:TIME_SCALE"
-           },
            DASHBOARD : {
-               LOAD: "LOAD:DASHBOARD",
                CHANGE_SEARCH: "SEARCH:CHANGE",
                CHANGE_DATE: "DATE:CHANGE",
+               CHANGE_SOURCE: "UPDATE:DATA_SOURCE",
+               CHANGE_COLOR_MAP: "UPDATE:COLOR_MAP",               
                ASSOCIATED_TERMS: "UPDATE:ASSOCIATED_TERMS",
                CHANGE_TERM_FILTERS: "UPDATE:CHANGE_TERM_FILTERS"
            },
@@ -96,72 +68,49 @@ const constants = {
                SAVE_PAGE_STATE: "SAVE:PAGE_STATE",
                LOAD_FACT: "LOAD:FACT"
            },
+           ADMIN : {
+               LOAD_KEYWORDS: "LOAD:KEYWORDS",
+               LOAD_FB_PAGES: "LOAD:FB_PAGES",
+               LOAD_LOCALITIES: "LOAD:LOCALITIES",
+               GET_LANGUAGE: "GET:LANGUAGE",
+               GET_TARGET_REGION: "GET:TARGET_REGION",
+               LOAD_FAIL: "LOAD:FAIL",
+           },
+};
+
+const DataSources = source => constants.DATA_SOURCES.has(source) ? constants.DATA_SOURCES.get(source).sourceValues : undefined;
+const DataSourceLookup = requestedSource => {
+    // eslint-disable-next-line
+    for (let [source, value] of constants.DATA_SOURCES.entries()) {
+        if(value.sourceValues.indexOf(requestedSource) > -1){
+            return value;
+        }
+    }
+
+    return undefined;
 };
 
 const methods = {
     DASHBOARD: {
-        initialize(siteKey){
-          let self = this;
-          let azureStorageCB = results => {
-                if(results && results.length > 0){
-                    self.dispatch(constants.DASHBOARD.LOAD, {
-                                            response: results,
-                                            siteKey: siteKey
-                    });
-                }
-          };
-
-          GetSearchEdges(siteKey, ENGLISH_LANGUAGE, azureStorageCB);
-        },
-        changeSearchFilter(selectedEntity, siteKey){
+        changeSearchFilter(selectedEntity, siteKey, colorMap){
            let self = this;
-           let dataStore = this.flux.stores.DataStore.dataStore;
 
-            let callback = (response, error) => {
-                 if(response && response.graphData){
-                        self.dispatch(constants.DASHBOARD.CHANGE_SEARCH, {timeSeriesResponse: response, selectedEntity: selectedEntity});
-                 }
-            };
-
-            if(selectedEntity.type === "Term"){
-                GetTimeSeries(dataStore.datetimeSelection, dataStore.timespanType, siteKey, callback, selectedEntity.properties.name);
-            }else{
-                self.dispatch(constants.DASHBOARD.CHANGE_SEARCH, {selectedEntity});
-            }
+           self.dispatch(constants.DASHBOARD.CHANGE_SEARCH, {selectedEntity, colorMap});
+        },
+        termsColorMap(colorMap){
+            this.dispatch(constants.DASHBOARD.CHANGE_COLOR_MAP, {colorMap})
         },
         changeTermsFilter(newFilters){
            this.dispatch(constants.DASHBOARD.CHANGE_TERM_FILTERS, newFilters);
+        },
+        filterDataSource(dataSource){
+           this.dispatch(constants.DASHBOARD.CHANGE_SOURCE, dataSource);
         },
         updateAssociatedTerms(associatedKeywords, bbox){
             this.dispatch(constants.DASHBOARD.ASSOCIATED_TERMS, {associatedKeywords, bbox});
         },
         changeDate(siteKey, datetimeSelection, timespanType){
-           let self = this;
-           let dataStore = this.flux.stores.DataStore.dataStore;
-           let callback = (response, error) => {
-                 if(response && response.graphData){
-                                 self.dispatch(constants.DASHBOARD.CHANGE_DATE, {timeSeriesResponse: response, datetimeSelection: datetimeSelection, timespanType: timespanType});
-                 }
-            };
-
-            GetTimeSeries(datetimeSelection, timespanType, siteKey, callback, dataStore.categoryValue);
-        }
-    },
-    GRAPHING : {
-        edit_time_scale(fromDate, toDate){
-            this.dispatch(constants.GRAPHING.CHANGE_TIME_SCALE, {fromDate: fromDate, 
-                                                                 toDate: toDate});
-        },
-        load_timeseries_data: function(siteKey){
-            let self = this;
-            let dataStore = this.flux.stores.DataStore.dataStore;
-            let callback = (response, error) => {
-                 if(response && response.graphData){
-                          self.dispatch(constants.GRAPHING.LOAD_GRAPH_DATA, {response});
-                 }
-            };
-
-            GetTimeSeries(dataStore.datetimeSelection, dataStore.timespanType, siteKey, callback, dataStore.categoryValue);
+           this.dispatch(constants.DASHBOARD.CHANGE_DATE, {datetimeSelection: datetimeSelection, timespanType: timespanType});
         }
     },
     FACTS: {
@@ -197,10 +146,93 @@ const methods = {
                     });
             }
         }
+    },
+    ADMIN: {
+        load_keywords: function () {
+            let self = this;
+            const keywordType = "Term";
+            let dataStore = this.flux.stores.AdminStore.dataStore;
+            if (!dataStore.loading) {
+                SERVICES.getDefaultSuggestionList("ocha", "en", keywordType, (error, response, body) => {
+                        if (!error && response.statusCode === 200) {
+                            const response = body.data.search.edges.map(term=>{
+                                  return Object.assign({}, {"name": term.properties.name});
+                            });
+                            self.dispatch(constants.ADMIN.LOAD_KEYWORDS, { keywords: response});
+                        }else{
+                            let error = 'Error, could not load keywords for admin page';
+                            self.dispatch(constants.ADMIN.LOAD_FAIL, { error });
+                        }
+                });
+            }
+        },
+
+        load_localities: function () {
+            let self = this;
+            const locationType = "Location";
+            let dataStore = this.flux.stores.AdminStore.dataStore;
+            if (!dataStore.loading) {
+                SERVICES.getDefaultSuggestionList("ocha", "en", locationType, (error, response, body) => {
+                        if (!error && response.statusCode === 200) {
+                            const response = body.data.search.edges.map(location=>{
+                                  return Object.assign({}, {"name": location.properties.name, "coordinates": location.properties.coordinates.join(",")});
+                            });
+                            self.dispatch(constants.ADMIN.LOAD_LOCALITIES, { localities: response});
+                        }else{
+                            let error = 'Error, could not load keywords for admin page';
+                            self.dispatch(constants.ADMIN.LOAD_FAIL, { error });
+                        }
+                });
+            }
+        },
+
+        load_fb_pages: function () {
+            let self = this;
+            let dataStore = this.flux.stores.AdminStore.dataStore;
+            if (!dataStore.loading) {
+                SERVICES.getAdminFbPages()
+                    .subscribe(response => {
+                        self.dispatch(constants.ADMIN.LOAD_FB_PAGES, { fbPages: response });
+                    }, error => {
+                        console.warning('Error, could not load facts', error);
+                        self.dispatch(constants.ADMIN.LOAD_FAIL, { error: error });
+                    });
+            }
+        },
+
+         get_language: function () {
+            let self = this;
+            let dataStore = this.flux.stores.AdminStore.dataStore;
+            if (!dataStore.loading) {
+                SERVICES.getAdminLanguage()
+                    .subscribe(response => {
+                        self.dispatch(constants.ADMIN.GET_LANGUAGE, { language: response });
+                    }, error => {
+                        console.warning('Error, could not load facts', error);
+                        self.dispatch(constants.FACTS.LOAD_FAIL, { error: error });
+                    });
+            }
+        },
+
+        get_target_region: function () {
+            let self = this;
+            let dataStore = this.flux.stores.AdminStore.dataStore;
+            if (!dataStore.loading) {
+                SERVICES.getAdminTargetRegion()
+                    .subscribe(response => {
+                        self.dispatch(constants.ADMIN.GET_TARGET_REGION, { targetRegion: response });
+                    }, error => {
+                        console.warning('Error, could not load facts', error);
+                        self.dispatch(constants.ADMIN.LOAD_FAIL, { error: error });
+                    });
+            }
+        }
     }
 };
 
 export const Actions = {
   constants: constants,
-  methods: methods
+  methods: methods,
+  DataSources: DataSources,
+  DataSourceLookup
 };
