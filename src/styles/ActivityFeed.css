@@ -68,7 +68,7 @@ a.keyword-link.pull-left {
 .news-feed-column{
     padding-left: 0px!important;
     padding-right: 0px!important;
-    background-color: #191919!important;
+    background-color: #30303d!important;
 }
 
 .feed-element .well {
@@ -216,16 +216,12 @@ background-color: #333;
 }
 
 .infite-scroll-container{
-    background-color: #21252B;
+    background-color: #30303d;
 }
 
 
 .panel-footer{
     padding: 5px 10px;
-}
-
-.form-control{
-    height: 25px!important;
 }
 
 .btn-sm{
@@ -243,8 +239,4 @@ background-color: #333;
 .label-news-feed{
     color:#000!important;
     border-radius: 5.25em!important
-}
-.translate-button{
-    height: 20px;
-    margin-left: 3px;
 }

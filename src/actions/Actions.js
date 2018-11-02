@@ -60,16 +60,14 @@ const constants = {
                CHANGE_SOURCE: "UPDATE:DATA_SOURCE",
                CHANGE_COLOR_MAP: "UPDATE:COLOR_MAP",               
                ASSOCIATED_TERMS: "UPDATE:ASSOCIATED_TERMS",
-               CHANGE_TERM_FILTERS: "UPDATE:CHANGE_TERM_FILTERS",
-               CHANGE_LANGUAGE: "UPDATE:CHANGE_LANGUAGE"
+               CHANGE_TERM_FILTERS: "UPDATE:CHANGE_TERM_FILTERS"
            },
            FACTS : {
                LOAD_FACTS: "LOAD:FACTS",
                LOAD_FACTS_SUCCESS: "LOAD:FACTS_SUCCESS",
                LOAD_FACTS_FAIL: "LOAD:FACTS_FAIL",
                SAVE_PAGE_STATE: "SAVE:PAGE_STATE",
-               LOAD_FACT: "LOAD:FACT",
-               CHANGE_LANGUAGE: "UPDATE:CHANGE_LANGUAGE"
+               LOAD_FACT: "LOAD:FACT"
            },
            ADMIN : {
                LOAD_KEYWORDS: "LOAD:KEYWORDS",
@@ -131,14 +129,7 @@ const methods = {
         changeDate(siteKey, datetimeSelection, timespanType){
            this.dispatch(constants.DASHBOARD.CHANGE_DATE, {datetimeSelection: datetimeSelection, timespanType: timespanType});
         },
-<<<<<<< HEAD
-        changeLanguage(language){
-           this.dispatch(constants.DASHBOARD.CHANGE_LANGUAGE, language);
-           this.dispatch(constants.FACTS.CHANGE_LANGUAGE, language);
-        }
-=======
 
->>>>>>> CatalystCode/Fortis-Client/settings
     },
     FACTS: {
         load_facts: function (pageSize, skip) {

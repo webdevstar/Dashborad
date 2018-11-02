@@ -3,7 +3,6 @@ import 'rx-dom';
 import {Actions} from '../actions/Actions';
 import {guid, momentToggleFormats, momentGetFromToRange} from '../utils/Utils.js';
 import request from 'request';
-import Promise from 'promise';
 
 const blobHostnamePattern = "https://{0}.blob.core.windows.net";
 const TIMESERIES_BLOB_CONTAINER_NAME = "ericroz-bytime";
@@ -386,7 +385,7 @@ export const SERVICES = {
                                             edges,
                                             createdtime,
                                             sentiment,
-                                            language,
+                                            orig_language,
                                             source
                                         }
                                     }
@@ -456,38 +455,5 @@ export const SERVICES = {
            name: "Bardīyah"
        }
        ]]);
-  },
-
-  translateSentence: function (sentence, fromLanguage, toLanguage) {
-      let query = `
-        fragment TranslationView on TranslationResult{
-            translatedSentence
-            } 
-
-            query FetchEvent($sentence: String!, $fromLanguage: String!, $toLanguage: String!) {
-
-            translate(sentence: $sentence, fromLanguage: $fromLanguage, toLanguage: $toLanguage){
-                ...TranslationView
-            }
-        }`
-      let variables = {sentence, fromLanguage, toLanguage};
-      let host = "http://localhost:8000"//"http://fortisfactsservice.azurewebsites.net"
-      var POST = {
-           url : `${host}/api/Messages`,
-            method : "POST",
-            json: true,
-            withCredentials: false,
-            body: { query, variables }
-        };
-        return new Promise((resolve, reject) => {
-             request(POST, (error, response, body) => {
-                 if(!error && body && body.data && body.data.translate && body.data.translate.translatedSentence){
-                    resolve(body.data.translate.translatedSentence);
-                 }
-                 else{
-                    reject (error || 'Translate request failed: ' + JSON.stringify(response));
-                 }
-             });
-         });
   }
 }
