@@ -7,7 +7,6 @@ import moment from 'moment';
 import Infinite from 'react-infinite';
 import CircularProgress from 'material-ui/CircularProgress';
 import Highlighter from 'react-highlight-words';
-import Promise from 'promise';
 
 const FluxMixin = Fluxxor.FluxMixin(React),
       StoreWatchMixin = Fluxxor.StoreWatchMixin("DataStore");
@@ -98,17 +97,17 @@ const FortisEvent = React.createClass({
         let commonTermsFromFilter = this.innerJoin(this.props.edges.concat([this.props.mainSearchTerm]), this.props.filters.concat([this.props.mainSearchTerm]));
         let searchWords = this.props.searchFilter ? this.props.edges.concat([this.props.searchFilter, this.props.mainSearchTerm]) : this.props.edges.concat([this.props.mainSearchTerm]);
         let dataSourceSchema = Actions.DataSourceLookup(this.props.source);
+
         return <div className="infinite-list-item" style={
                         {
                             height: this.props.height,
                             lineHeight: this.props.lineHeight
                         }
-                    }>             
+                    }>
             <h6 style={styles.listItemHeader}>
                 <i style={styles.sourceLogo} className={dataSourceSchema.icon}></i>
                 {this.props.postedTime}
                 {commonTermsFromFilter.map(item=><span key={item} style={styles.tagStyle} className={tagClassName}>{item}</span>)}
-                {this.props.pageLanguage!=this.props.language ? <button className="translate-button" onClick={() => this.props.translate(this.props, searchWords)}>Translate</button> : ''}
             </h6>
             <div>
                 <Highlighter
@@ -201,8 +200,7 @@ export const ActivityFeed = React.createClass({
   componentWillReceiveProps: function(nextProps){
       if(this.hasChanged(nextProps, "bbox") || this.hasChanged(nextProps, "datetimeSelection") 
        ||  this.hasChanged(nextProps, "timespanType") || this.hasChanged(nextProps, "edges")
-       ||  this.hasChanged(nextProps, "categoryValue") || this.hasChanged(nextProps, "dataSource")
-       ||  this.hasChanged(nextProps, "language") ){
+       ||  this.hasChanged(nextProps, "categoryValue") || this.hasChanged(nextProps, "dataSource")){
 
           const params = {...nextProps, elementStartList: [], offset: 0, filteredSource: nextProps.dataSource};
 
@@ -215,39 +213,6 @@ export const ActivityFeed = React.createClass({
       const params = {...this.props, elementStartList: [], offset: 0, filteredSource: this.props.dataSource};
       this.processNewsFeed(params);
   },
-
-  translateEvent(event, tags){   
-    let self = this;
-    let sentenceTranslatePromise = SERVICES.translateSentence(event.sentence, event.language, this.props.language);
-    let dateTranslatePromise = SERVICES.translateSentence(event.postedTime, event.language, this.props.language);
-    Promise.all([sentenceTranslatePromise, dateTranslatePromise]).then(translatedValues => {
-        let translatedSentence = translatedValues[0];
-        let translatedDate = translatedValues[1];
-        let updatedElements = self.state.elements.map(element => {
-            if (element.key == event.id) {
-                return <FortisEvent key={element.key}
-                    id={element.props.id}
-                    sentence={translatedSentence}
-                    source={element.props.source}
-                    postedTime={translatedDate}
-                    sentiment={element.props.sentiment}
-                    edges={element.props.edges}
-                    filters={element.props.edges}
-                    searchFilter={element.props.searchFilter}
-                    mainSearchTerm={element.props.mainSearchTerm}
-                    language={self.props.language}
-                    pageLanguage={element.props.pageLanguage}
-                    translate={self.translateEvent} />;
-            }
-            else {
-                return element;
-            }
-        });
-        self.setState({
-            elements: updatedElements
-        });
-    });
-},
 
   buildElements: function(requestPayload) {
         let elements = [];
@@ -270,10 +235,7 @@ export const ActivityFeed = React.createClass({
                                                         edges={feature.properties.edges}
                                                         filters={requestPayload.edges}
                                                         searchFilter={requestPayload.searchValue}
-                                                        mainSearchTerm={this.props.categoryValue} 
-                                                        language={feature.properties.language}     
-                                                        pageLanguage={this.props.language}
-                                                        translate={this.translateEvent}/>)                               
+                                                        mainSearchTerm={this.props.categoryValue} />)                               
                             }
                         });
 
