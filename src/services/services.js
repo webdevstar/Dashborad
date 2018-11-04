@@ -8,6 +8,41 @@ import Promise from 'promise';
 const blobHostnamePattern = "https://{0}.blob.core.windows.net";
 const TIMESERIES_BLOB_CONTAINER_NAME = "processed-timeseries-bysource";
 const MAX_ZOOM = 15;
+const locationEdgeFragment = `fragment FortisDashboardLocationEdges on LocationCollection {
+                                        runTime
+                                        edges {
+                                            name
+                                            name_ar
+                                            type
+                                            coordinates
+                                            population
+                                            aciiname
+                                            region
+                                            RowKey
+                                            country_iso
+                                            alternatenames
+                                        }
+                                    }`;
+
+const termsEdgeFragment = ` fragment FortisDashboardTermEdges on TermCollection {
+                                    runTime
+                                    edges {
+                                        name
+                                        type
+                                        name_ar
+                                        RowKey
+                                    }
+                                }`;
+
+const twitterFragment = `fragment FortisTwitterAcctView on TwitterAccountCollection {
+                            accounts {
+                                    accountName
+                                    consumerKey
+                                    token
+                                    consumerSecret
+                                    tokenSecret
+                            }
+                        }`;
 
 export const SERVICES = {
     getPopularTermsTimeSeries(siteKey, accountName, datetimeSelection, timespanType, selectedTerm, dataSource, callback) {
@@ -58,7 +93,7 @@ export const SERVICES = {
         request(POST, callback);
     },
 
-  fetchEdges(site, languages, edgeType, callback){
+    fetchEdges(site, languages, edgeType, callback){
       const locationEdgeFragment = `fragment FortisDashboardLocationEdges on LocationCollection {
                                         runTime
                                         edges {
@@ -293,25 +328,16 @@ export const SERVICES = {
     },
 
     saveTwitterAccounts(site, accounts, mutation, callback) {
-        let fragment = `fragment FortisTwitterAcctView on TwitterAccountCollection {
-                            accounts {
-                                    accountName
-                                    consumerKey
-                                    token
-                                    consumerSecret
-                                    tokenSecret
-                            }
-                        }`;
-        let query = ` ${fragment} 
+        const query = ` ${twitterFragment} 
                       mutation ModifyTwitterAccounts($input: TwitterAccountDefintion!) {
                             streams: ${mutation}(input: $input) {
                                 ...FortisTwitterAcctView
                             }
                         }`;
 
-        let variables = { input: { accounts, site } };
-        let host = process.env.REACT_APP_SERVICE_HOST
-        var POST = {
+        const variables = { input: { accounts, site } };
+        const host = process.env.REACT_APP_SERVICE_HOST
+        const POST = {
             url: `${host}/api/settings`,
             method: "POST",
             json: true,
@@ -323,17 +349,7 @@ export const SERVICES = {
     },
 
     getTwitterAccounts(siteId, callback) {
-        let fragment = `fragment FortisTwitterAcctView on TwitterAccountCollection {
-                            accounts {
-                                    accountName
-                                    consumerKey
-                                    token
-                                    consumerSecret
-                                    tokenSecret
-                            }
-                        }`;
-
-        let query = `  ${fragment}
+        let query = `  ${twitterFragment}
                         query TwitterAccounts($siteId: String!) {
                             streams: twitterAccounts(siteId: $siteId) {
                                 ...FortisTwitterAcctView
@@ -355,18 +371,54 @@ export const SERVICES = {
     },
 
     saveKeywords(site, edges, callback) {
-        const termsEdgeFragment = ` fragment FortisDashboardTermEdges on TermCollection {
-                                    edges {
-                                        name
-                                        type
-                                        name_ar
-                                        RowKey
-                                    }
-                                }`;
         const query = `${termsEdgeFragment} 
                         mutation AddKeywords($input: EdgeTerms!) {
                             addKeywords(input: $input) {
                                 ...FortisDashboardTermEdges
+                            }
+                        }`;
+
+        const variables = { input: { site, edges } };
+
+        const host = process.env.REACT_APP_SERVICE_HOST
+        const POST = {
+            url: `${host}/api/edges`,
+            method: "POST",
+            json: true,
+            withCredentials: false,
+            body: { query, variables }
+        };
+
+        request(POST, callback);
+    },
+
+    saveLocations(site, edges, callback) {
+        const query = `${locationEdgeFragment} 
+                        mutation SaveLocations($input: EdgeLocations!) {
+                            saveLocations(input: $input) {
+                                ...FortisDashboardLocationEdges
+                            }
+                        }`;
+
+        const variables = { input: { site, edges } };
+
+        const host = process.env.REACT_APP_SERVICE_HOST
+        const POST = {
+            url: `${host}/api/edges`,
+            method: "POST",
+            json: true,
+            withCredentials: false,
+            body: { query, variables }
+        };
+
+        request(POST, callback);
+    },
+
+    removeLocations(site, edges, callback) {
+        const query = `${locationEdgeFragment} 
+                        mutation removeLocations($input: EdgeLocations!) {
+                            removeLocations(input: $input) {
+                                ...FortisDashboardLocationEdges
                             }
                         }`;
 
@@ -406,14 +458,6 @@ export const SERVICES = {
     },
 
     removeKeywords(site, edges, callback) {
-        const termsEdgeFragment = ` fragment FortisDashboardTermEdges on TermCollection {
-                                    edges {
-                                        name
-                                        type
-                                        name_ar
-                                        RowKey
-                                    }
-                                }`;
         const query = `${termsEdgeFragment} 
                         mutation RemoveKeywords($input: EdgeTerms!) {
                             removeKeywords(input: $input) {
