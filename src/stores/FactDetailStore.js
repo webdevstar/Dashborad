@@ -4,13 +4,11 @@ import { Actions } from '../actions/Actions';
 export const FactDetailStore = Fluxxor.createStore({
   initialize() {
     this.dataStore = {
-      factDetail: null,
-      error: null,
+      factDetail: null
     };
 
     this.bindActions(
-      Actions.constants.DASHBOARD.LOAD_DETAIL, this.handleLoadFact, 
-      Actions.constants.DASHBOARD.LOAD_DETAIL_ERROR, this.handleLoadFactError 
+      Actions.constants.FACTS.LOAD_FACT, this.handleLoadFact
     );
   },
 
@@ -19,12 +17,7 @@ export const FactDetailStore = Fluxxor.createStore({
   },
 
   handleLoadFact(payload) {
-    this.dataStore.factDetail = payload.event;
-    this.emit("change");
-  },
-
-    handleLoadFactError(error) {
-    this.dataStore.error = error;
+    this.dataStore.factDetail = payload.response;
     this.emit("change");
   },
 
