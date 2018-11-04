@@ -7,7 +7,6 @@ import moment from 'moment';
 import Infinite from 'react-infinite';
 import CircularProgress from 'material-ui/CircularProgress';
 import Highlighter from 'react-highlight-words';
-import DialogBox from './DialogBox';
 
 const FluxMixin = Fluxxor.FluxMixin(React),
       StoreWatchMixin = Fluxxor.StoreWatchMixin("DataStore");
@@ -51,6 +50,11 @@ const styles ={
     highlight: {
         backgroundColor: '#ffd54f',
         fontWeight: '600'
+    },
+    translateButton: {
+        height: "20px",
+        marginLeft: "3px",
+        lineHeight: '1'
     }
 };
 
@@ -84,49 +88,56 @@ const FortisEvent = React.createClass({
     },
     innerJoin(arr1, arr2){
         let out = new Set();
-
+        
         arr1.forEach(item=>{
             if(arr2.indexOf(item) > -1){
                 out.add(item);
             }
         });
-
+        
         return Array.from(out);
     },
     render: function() {
         let tagClassName = this.getSentimentLabelStyle(this.props.sentiment * 100);
         let commonTermsFromFilter = this.innerJoin(this.props.edges.concat([this.props.mainSearchTerm]), this.props.filters.concat([this.props.mainSearchTerm]));
-        let searchWords = this.props.searchFilter ? this.props.edges.concat([this.props.searchFilter, this.props.mainSearchTerm]) : this.props.edges.concat([this.props.mainSearchTerm]);
-        let dataSourceSchema = Actions.DataSourceLookup(this.props.source);
-        let content = this.props;
+        const languageEdgeMap = this.props.edgesByLanguages.get(DEFAULT_LANGUAGE);
+        
+        let commonTermsFromFilterTranslated = commonTermsFromFilter.map(term =>{
+            return languageEdgeMap.get(term.toLowerCase())[`name_${this.props.pageLanguage}`]
+        });
 
+        let searchWords = this.props.searchFilter ? this.props.edges.concat([this.props.searchFilter, this.props.mainSearchTerm]) : this.props.edges.concat([this.props.mainSearchTerm]);
+
+        let searchWordsTranslated = searchWords.map(term => {
+            return languageEdgeMap.get(term.toLowerCase())[`name_${this.props.pageLanguage}`];
+        });
+
+        let dataSourceSchema = Actions.DataSourceLookup(this.props.source);
         return <div className="infinite-list-item" style={
                         {
                             height: this.props.height,
                             lineHeight: this.props.lineHeight
                         }
-                    } onClick={() => {
-                            this.props.handleOpenDialog(content)
-                        }
-                    }>
+                    }>             
             <h6 style={styles.listItemHeader}>
                 <i style={styles.sourceLogo} className={dataSourceSchema.icon}></i>
                 {this.props.postedTime}
-                {commonTermsFromFilter.map(item=><span key={item} style={styles.tagStyle} className={tagClassName}>{item}</span>)}
+                {commonTermsFromFilterTranslated.map(item=><span key={item} style={styles.tagStyle} className={tagClassName}>{item}</span>)}
+                {this.props.pageLanguage!==this.props.language ? <button className="btn btn-primary btn-sm" style={styles.translateButton}  onClick={ev => {ev.stopPropagation(); this.props.translate(this.props);}}>Translate</button> : ''}
             </h6>
             <div>
                 <Highlighter
-                    searchWords={searchWords}
+                    searchWords={searchWordsTranslated}
                     highlightStyle={styles.highlight}
                     textToHighlight={this.props.sentence} />
             </div>
         </div>;
     }
 });
-
+      
 export const ActivityFeed = React.createClass({
   mixins: [FluxMixin, StoreWatchMixin],
-
+   
   getStateFromFlux: function() {
     return this.getFlux().store("DataStore").getState();
   },
@@ -143,9 +154,9 @@ export const ActivityFeed = React.createClass({
 
   handleInfiniteLoad: function() {
         var self = this;
-
+        
         //if the prevbiosuly loaded enumber of elements is less than the increment count
-        //then we reached the end of the list.
+        //then we reached the end of the list. 
         if(this.state.previousElementLength < OFFSET_INCREMENT){
             this.setState({
                 isInfiniteLoading: false
@@ -155,14 +166,14 @@ export const ActivityFeed = React.createClass({
                 isInfiniteLoading: true
             });
             setTimeout(() => {
-                const params = {...self.props, elementStartList: self.state.elements, offset: self.state.offset, filteredSource: this.state.filteredSource};
+                const params = {...self.props, elementStartList: self.state.elements, offset: self.state.offset, filteredSource: this.state.filteredSource}; 
                 self.processNewsFeed(params);
             }, INFINITE_LOAD_DELAY_MS);
         }
   },
 
   fetchSentences: function(requestPayload, callback){
-      let {categoryValue, timespanType, searchValue, limit, offset, edges, siteKey,
+      let {categoryValue, timespanType, searchValue, limit, offset, edges, siteKey, 
            categoryType, filteredSource, bbox, datetimeSelection} = requestPayload;
       let location = [];
 
@@ -170,10 +181,9 @@ export const ActivityFeed = React.createClass({
           categoryValue = undefined;
           location = this.state.selectedLocationCoordinates;
       }
-
-      SERVICES.FetchMessageSentences(siteKey, bbox, datetimeSelection, timespanType,
-                                     limit, offset, edges, DEFAULT_LANGUAGE, Actions.DataSources(filteredSource),
-                                     categoryValue, searchValue, location, callback);
+      SERVICES.FetchMessageSentences(siteKey, bbox, datetimeSelection, timespanType, 
+                                     limit, offset, edges, DEFAULT_LANGUAGE, Actions.DataSources(filteredSource), 
+                                     categoryValue?categoryValue.name.toLowerCase():categoryValue, searchValue, location, callback);
   },
 
   renderDataSourceTabs: function(iconStyle){
@@ -183,7 +193,7 @@ export const ActivityFeed = React.createClass({
                 tabs.push(<li key={source} role="presentation" className={source === self.state.filteredSource ? activeHeaderClass : inactiveClass}><a onClick={self.sourceOnClickHandler.bind(self, source)}><i style={iconStyle} className={`${value.icon} fa-2x`}></i>{value.label}</a></li>)
         }
     }else{
-        let tabSchema = Actions.constants.DATA_SOURCES.get(this.state.filteredSource);
+        let tabSchema = Actions.constants.DATA_SOURCES.get(this.state.filteredSource); 
         tabs.push(<li key={this.state.filteredSource} role="presentation" className={activeHeaderClass}><a onClick={self.sourceOnClickHandler.bind(self, this.state.filteredSource)}><i style={iconStyle} className={`${tabSchema.icon} fa-2x`}></i>{tabSchema.label}</a></li>)
     }
 
@@ -203,13 +213,15 @@ export const ActivityFeed = React.createClass({
   },
 
   componentWillReceiveProps: function(nextProps){
-      if(this.hasChanged(nextProps, "bbox") || this.hasChanged(nextProps, "datetimeSelection")
+      if(this.hasChanged(nextProps, "bbox") || this.hasChanged(nextProps, "datetimeSelection") 
        ||  this.hasChanged(nextProps, "timespanType") || this.hasChanged(nextProps, "edges")
-       ||  this.hasChanged(nextProps, "categoryValue") || this.hasChanged(nextProps, "dataSource")){
+       ||  this.hasChanged(nextProps, "categoryValue") || this.hasChanged(nextProps, "dataSource")
+       ||  this.hasChanged(nextProps, "language") ){
 
           const params = {...nextProps, elementStartList: [], offset: 0, filteredSource: nextProps.dataSource};
 
           this.setState({filteredSource: params.filteredSource});
+
           this.processNewsFeed(params);
       }
   },
@@ -219,19 +231,54 @@ export const ActivityFeed = React.createClass({
       this.processNewsFeed(params);
   },
 
+  translateEvent(event){   
+    let self = this;
+    SERVICES.translateSentence(event.sentence, event.language, this.props.language, (translatedSentence, error) => {
+        if(translatedSentence){
+            let updatedElements = self.state.elements.map(element => {
+                if (element.key === event.id) {
+                    return <FortisEvent key={event.id}
+                        id={event.id}
+                        sentence={translatedSentence}
+                        source={element.props.source}
+                        postedTime={element.props.postedTime}
+                        sentiment={element.props.sentiment}
+                        edges={element.props.edges}
+                        filters={element.props.edges}
+                        searchFilter={element.props.searchFilter}
+                        mainSearchTerm={element.props.mainSearchTerm}
+                        edgesByLanguages={self.state.allEdges}  
+                        language={self.props.language}
+                        pageLanguage={element.props.pageLanguage}
+                        translate={self.translateEvent} />;
+                }
+                else {
+                    return element;
+                }
+            });
+            self.setState({
+                elements: updatedElements
+            });
+        }
+    else {
+        console.error(`[${error}] occured while translating sentense`);
+    }
+    });
+ },
+
   buildElements: function(requestPayload) {
         let elements = [];
         let self = this;
         let nextOffset = requestPayload.start + OFFSET_INCREMENT;
 
-        this.fetchSentences(requestPayload,
+        this.fetchSentences(requestPayload, 
             (error, response, body) => {
                 if(!error && response.statusCode === 200 && body.data) {
                     let graphQLResponse = body.data[Object.keys(body.data)[0]];
                     if(graphQLResponse && graphQLResponse.features && Array.isArray(graphQLResponse.features)){
                         graphQLResponse.features.forEach(feature => {
                             if(feature.properties.sentence && feature.properties.sentence.length > 2){
-                                elements.push(<FortisEvent key={feature.properties.messageid}
+                                elements.push(<FortisEvent key={feature.properties.messageid} 
                                                         id={feature.properties.messageid}
                                                         sentence={feature.properties.sentence}
                                                         source={feature.properties.source}
@@ -240,17 +287,19 @@ export const ActivityFeed = React.createClass({
                                                         edges={feature.properties.edges}
                                                         filters={requestPayload.edges}
                                                         searchFilter={requestPayload.searchValue}
-                                                        mainSearchTerm={this.props.categoryValue}
-                                                        handleOpenDialog={this.handleOpenDialog} />)
+                                                        mainSearchTerm={this.props.categoryValue.name} 
+                                                        language={feature.properties.language}  
+                                                        edgesByLanguages={self.state.allEdges}   
+                                                        pageLanguage={this.props.language}
+                                                        translate={this.translateEvent}/>)                               
                             }
                         });
-
                         elements = requestPayload.elementStartList.concat(elements);
                     }
                 }else{
                     console.error(`[${error}] occured while processing message request`);
                 }
-
+                
                 self.setState({
                      offset: nextOffset,
                      isInfiniteLoading: false,
@@ -266,12 +315,12 @@ export const ActivityFeed = React.createClass({
       this.setState({
           isInfiniteLoading: true
       });
-
+      
       if(params.bbox && params.edges && params.datetimeSelection && params.timespanType){
           this.buildElements(params);
       }
   },
-
+  
   elementInfiniteLoad: function() {
         return <div className="infinite-list-item">
             Loading... <CircularProgress />
@@ -290,7 +339,7 @@ export const ActivityFeed = React.createClass({
       event.preventDefault();
       this.processNewsFeed(params);
   },
-
+  
   render() {
     let iconStyle = {
         color: "#337ab7"
@@ -320,12 +369,7 @@ export const ActivityFeed = React.createClass({
                        </span>
                   </div>
             </div>
-            <DialogBox ref="dialogBox" {...this.props}></DialogBox>
       </div>
      );
-  },
-
-  handleOpenDialog(item) {
-      this.refs.dialogBox.open(item);
   }
 });
