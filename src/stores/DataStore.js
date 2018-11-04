@@ -18,8 +18,7 @@ export const DataStore = Fluxxor.createStore({
           bbox: [],
           colorMap: new Map(),
           selectedLocationCoordinates: [],
-          categoryValue: false,
-          language: 'en'
+          categoryValue: false
       }
       
       this.bindActions(
@@ -29,8 +28,7 @@ export const DataStore = Fluxxor.createStore({
             Actions.constants.DASHBOARD.ASSOCIATED_TERMS, this.mapDataUpdate,
             Actions.constants.DASHBOARD.CHANGE_COLOR_MAP, this.handleChangeColorMap,
             Actions.constants.DASHBOARD.CHANGE_TERM_FILTERS, this.handleChangeTermFilters,
-            Actions.constants.DASHBOARD.CHANGE_SOURCE, this.handleDataSourceChange,
-            Actions.constants.DASHBOARD.CHANGE_LANGUAGE, this.handleLanguageChange
+            Actions.constants.DASHBOARD.CHANGE_SOURCE, this.handleDataSourceChange
       );
     },
 
@@ -50,12 +48,6 @@ export const DataStore = Fluxxor.createStore({
 
     handleDataSourceChange(dataSource){
         this.dataStore.dataSource = dataSource;
-        this.dataStore.renderMap = true;
-        this.emit("change");
-    },
-
-    handleLanguageChange(language){
-        this.dataStore.language = language;
         this.dataStore.renderMap = true;
         this.emit("change");
     },
@@ -89,12 +81,7 @@ export const DataStore = Fluxxor.createStore({
     
     handleChangeSearchTerm(changedData){
         this.dataStore.associatedKeywords = new Map();
-        this.dataStore.categoryValue = changedData.selectedEntity;
-        let settings = this.dataStore.settings.properties;
-        settings.supportedLanguages.forEach(lang => {
-            let name = (changedData.selectedEntity.name_en||changedData.selectedEntity.name).toLowerCase();
-            this.dataStore.categoryValue["name_"+lang]=settings.edgesByLanguages[name][lang];
-        })
+        this.dataStore.categoryValue = changedData.selectedEntity.name;
         this.dataStore.selectedLocationCoordinates = changedData.selectedEntity.coordinates || [];
         this.dataStore.categoryType = changedData.selectedEntity.type;
         this.dataStore.renderMap = true;

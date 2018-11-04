@@ -26,6 +26,7 @@ export const AdminWatchlist = React.createClass({
             <DataGrid rowHeight={40}
                       minHeight={500}
                       rowKey="RowKey"
+                      uniqueKey="name"
                       guidAutofillColumn="RowKey"
                       handleSave={this.handleSave}
                       handleRemove={this.handleRemove}

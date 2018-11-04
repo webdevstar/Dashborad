@@ -61,7 +61,8 @@ const constants = {
                CHANGE_COLOR_MAP: "UPDATE:COLOR_MAP",               
                ASSOCIATED_TERMS: "UPDATE:ASSOCIATED_TERMS",
                CHANGE_TERM_FILTERS: "UPDATE:CHANGE_TERM_FILTERS",
-               CHANGE_LANGUAGE: "DASHBOARD:CHANGE_LANGUAGE"
+               LOAD_DETAIL: "LOAD:DETAIL",
+               LOAD_DETAIL_ERROR: "LOAD:DETAIL_ERROR",
            },
            FACTS : {
                LOAD_FACTS_SUCCESS: "LOAD:FACTS_SUCCESS",
@@ -69,7 +70,6 @@ const constants = {
                INITIALIZE: "INIT",
                SAVE_PAGE_STATE: "SAVE:PAGE_STATE",
                LOAD_FACT: "LOAD:FACT",
-               CHANGE_LANGUAGE: "FACTS:CHANGE_LANGUAGE",
                LOAD_FACT_TAGS: "LOAD:FACT_TAGS"
            },
            ADMIN : {
@@ -103,55 +103,22 @@ const methods = {
     DASHBOARD: {
         changeSearchFilter(selectedEntity, siteKey, colorMap){
            let self = this;
+
            self.dispatch(constants.DASHBOARD.CHANGE_SEARCH, {selectedEntity, colorMap});
         },
-        initializeDashboard(siteId) {
+        initializeDashboard(siteId){
             let self = this;
 
-            SERVICES.getSiteDefintion(siteId, false, (response, error) => {
-                if (response) {
-                    let siteSettings = response.siteDefinition.sites[0];
-                    let languages = siteSettings.properties.supportedLanguages;
-                    SERVICES.fetchEdges(siteId, languages, "All", (edges, error) => {
-                        if (edges){
-                            let edgesDictionary = {};
-                            edges.terms.edges.concat(edges.locations.edges).forEach(edgeObject => {
-                                let wordByLanguageMap = {};
-                                languages.forEach(language => {
-                                    if(language == 'en'){
-                                        wordByLanguageMap[language] = edgeObject['name'];
-                                    }
-                                    else{
-                                        wordByLanguageMap[language] = edgeObject['name_' + language] || edgeObject[language+'_name'];
-                                    }
-                                })
-                                edgesDictionary[edgeObject.name.toLowerCase()] = wordByLanguageMap;
-                            })
-                            siteSettings.properties.edgesByLanguages = edgesDictionary;
-                            
-                            siteSettings.properties.edges = edges.terms.edges.concat(edges.locations.edges).map(edge => {
-                                languages.forEach(language => {
-                                    if (edge[language + '_name']) {
-                                        edge['name_' + language] = edge[language + '_name'];
-                                    }
-                                });
-                                edge["name_en"] = edge["name"];
-                                return edge;
-                            });
-                            console.log("siteSettings", siteSettings);
-                            self.dispatch(constants.DASHBOARD.INITIALIZE, siteSettings);
-                        }
-                        else {
-                            console.error(`[${error}] occured while fetching edges`);
-                        }
-                    });
-
-                } else {
+            SERVICES.getSiteDefintion(siteId, false, (error, response, body) => {
+                if(!error && response.statusCode === 200 && body.data && body.data.siteDefinition.sites) {
+                    const siteSettings = body.data.siteDefinition.sites[0];
+                    self.dispatch(constants.DASHBOARD.INITIALIZE, siteSettings);
+                    
+                }else{
                     console.error(`[${error}] occured while processing message request`);
                 }
             });
         },
-   
         termsColorMap(colorMap){
             this.dispatch(constants.DASHBOARD.CHANGE_COLOR_MAP, {colorMap})
         },
@@ -167,10 +134,18 @@ const methods = {
         changeDate(siteKey, datetimeSelection, timespanType){
            this.dispatch(constants.DASHBOARD.CHANGE_DATE, {datetimeSelection: datetimeSelection, timespanType: timespanType});
         },
-        changeLanguage(language){
-           this.dispatch(constants.DASHBOARD.CHANGE_LANGUAGE, language);
-           this.dispatch(constants.FACTS.CHANGE_LANGUAGE, language);
-        }
+        loadDetail(siteKey, messageId, dataSources, fields=["messageid","sentence","edges","createdtime","sentiment","orig_language","source"]){
+            let self = this;
+            SERVICES.FetchMessageDetail(siteKey, messageId, dataSources, fields, {}, (error, response, body) => {
+                if (!error && response.statusCode === 200 && body.data) {
+                    const data = body.data;
+                    self.dispatch(constants.DASHBOARD.LOAD_DETAIL, data);
+                } else {
+                    console.error(`[${error}] occured while processing message request`);
+                    self.dispatch(constants.DASHBOARD.LOAD_DETAIL_ERROR, error);
+                }
+            });
+        },
     },
     FACTS: {
         load_facts: function (pageSize, skip, tagFilterArray = []) {
@@ -193,12 +168,17 @@ const methods = {
             let self = this;
             const LOAD_SITE_LIST = true;
 
-            SERVICES.getSiteDefintion(siteName, false, (response, error) => {
-                if (response) {
-                    self.dispatch(constants.FACTS.INITIALIZE, response.siteDefinition.sites[0]);
-                }else{
-                    console.error(`[${error}] occured while processing message request`);
-                }
+            SERVICES.getSiteDefintion(siteName, LOAD_SITE_LIST, (error, response, body) => {
+                    if(!error && response.statusCode === 200 && body.data && body.data.siteDefinition) {
+                        const settings = body.data.siteDefinition.sites;
+                        if(settings && settings.length > 0){
+                            self.dispatch(constants.FACTS.INITIALIZE, settings[0]);
+                        }else{
+                            console.error(`site [${siteName}] does not exist.`);
+                        }
+                    }else{
+                        console.error(`[${error}] occured while processing message request`);
+                    }
             });
         },
         save_page_state: function (pageState) {
@@ -219,14 +199,15 @@ const methods = {
             let self = this;
             const LOAD_SITE_LIST = true;
 
-            SERVICES.getSiteDefintion(siteName, LOAD_SITE_LIST, (response, error) => {
-                    if(response) {
-                        if(response.siteDefinition.sites.length > 0){
+            SERVICES.getSiteDefintion(siteName, LOAD_SITE_LIST, (error, response, body) => {
+                    if(!error && response.statusCode === 200 && body.data && body.data.siteDefinition) {
+                        const settings = body.data.siteDefinition.sites;
+                        if(settings && settings.length > 0){
                             const action = false;
-                            self.dispatch(constants.ADMIN.LOAD_SETTINGS, {settings: response.siteDefinition.sites[0], 
+                            self.dispatch(constants.ADMIN.LOAD_SETTINGS, {settings: settings[0], 
                                                                           action: action, 
                                                                           originalSiteName: siteName, 
-                                                                          siteList: response.siteList.sites});
+                                                                          siteList: body.data.siteList.sites});
                         }else{
                             console.error(`site [${siteName}] does not exist.`);
                         }
@@ -309,15 +290,17 @@ const methods = {
             const edgeType = "Term";
             let dataStore = this.flux.stores.AdminStore.dataStore;
             if (!dataStore.loading) {
-                SERVICES.fetchEdges(siteId,languages, edgeType, (result,error) => {   
-                    if(result){            
-                        let action = false;
-                        self.dispatch(constants.ADMIN.LOAD_KEYWORDS, {result, action});
-                    }
-                    else{
-                        self.dispatch(constants.ADMIN.LOAD_FAIL, { error });
-                    }
-                })
+                SERVICES.fetchEdges(siteId, "en", edgeType, (error, response, body) => {
+                        if (!error && response.statusCode === 200) {
+                            let response = body.data.terms.edges;
+                            
+                            let action = false;
+                            self.dispatch(constants.ADMIN.LOAD_KEYWORDS, {response, action});
+                        }else{
+                            let error = 'Error, could not load keywords for admin page';
+                            self.dispatch(constants.ADMIN.LOAD_FAIL, { error });
+                        }
+                });
             }
         },
         remove_keywords: function(siteId, deletedRows){
@@ -345,43 +328,23 @@ const methods = {
                 }
             });
         },
-        save_locations: function(siteId, modifiedKeywords){
-            let self = this;
-            SERVICES.saveLocations(siteId, modifiedKeywords, (error, response, body) => {
-                if(!error && response.statusCode === 200) {
-                    const action = 'saved';
-                    const response = body.data.saveLocations.edges;
-                    self.dispatch(constants.ADMIN.LOAD_LOCALITIES, {response, action});
-                }else{
-                    console.error(`[${error}] occured while processing save locations request`);
-                }
-            });
-        },
-        remove_locations: function(siteId, modifiedLocations){
-            let self = this;
-            SERVICES.removeLocations(siteId, modifiedLocations, (error, response, body) => {
-                if(!error && response.statusCode === 200) {
-                    const action = 'saved';
-                    const response = body.data.removeLocations.edges;
-                    self.dispatch(constants.ADMIN.LOAD_LOCALITIES, {response, action});
-                }else{
-                    console.error(`[${error}] occured while processing save locations request`);
-                }
-            });
-        },
-        load_localities: function (siteId) {
+        load_localities: function () {
             let self = this;
             const edgeType = "Location";
-            SERVICES.fetchEdges(siteId, "en", edgeType, (error, response, body) => {
+            let dataStore = this.flux.stores.AdminStore.dataStore;
+            if (!dataStore.loading) {
+                SERVICES.fetchEdges("ocha", "en", edgeType, (error, response, body) => {
                         if (!error && response.statusCode === 200) {
-                            const action = false;
-                            const response = body.data.locations.edges;
-                            self.dispatch(constants.ADMIN.LOAD_LOCALITIES, {response, action});
+                            const response = body.data.locations.edges.map(location=>{
+                                  return Object.assign({}, {"name": location.name, "coordinates": location.coordinates.join(",")});
+                            });
+                            self.dispatch(constants.ADMIN.LOAD_LOCALITIES, { localities: response});
                         }else{
                             let error = 'Error, could not load keywords for admin page';
                             self.dispatch(constants.ADMIN.LOAD_FAIL, { error });
                         }
-            });
+                });
+            }
         },
 
         load_fb_pages: function () {
