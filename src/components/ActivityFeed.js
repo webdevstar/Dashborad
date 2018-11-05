@@ -16,10 +16,10 @@ const FluxMixin = Fluxxor.FluxMixin(React),
 
 const OFFSET_INCREMENT = 18;
 const DEFAULT_LANGUAGE = "en";
-const ELEMENT_ITEM_HEIGHT = 130;
+const ELEMENT_ITEM_HEIGHT = 80;
 const NEWS_FEED_SEARCH_CONTAINER_HEIGHT = 70;
 const INFINITE_LOAD_DELAY_MS = 1000;
-const MOMENT_FORMAT = "MM/DD HH:mm:s";
+const MOMENT_FORMAT = "MM/DD HH:mm:ss";
 const SERVICE_DATETIME_FORMAT = "MM/DD/YYYY HH:mm:s A";
 const styles ={
     sourceLogo: {
@@ -47,16 +47,24 @@ const styles ={
     },
     highlightStyles: {
         positive: {
-            backgroundColor: "#337ab7"
+            borderColor: "#337ab7",
+            border: '1px solid',
+            color: "#337ab7"
         },
         neutral: {
-            backgroundColor: "#caaa00"
+            borderColor: "#caaa00",
+            border: '1px solid',
+            color: "#caaa00"
         },
         negative: {
-            backgroundColor: "#f48342"
+            borderColor: "#f48342",
+            border: '1px solid',
+            color: "#f48342"
         },
         veryNegative: {
-            backgroundColor: "#d9534f"
+            borderColor: "#d9534f",
+            border: '1px solid',
+            color: "#d9534f"
         }
     },
     tabStyle:{
@@ -149,13 +157,7 @@ const FortisEvent = React.createClass({
         let content = this.props;
         let newsItemTitle = this.props.originalSource.replace(/http:\/\/www./g, '').replace(/.com\//g, '').replace(/http:\/\//g, '');
 
-        return <div className="infinite-list-item" style={
-                        {
-                            height: this.props.height,
-                            lineHeight: this.props.lineHeight
-                        }
-                    }            
-                    onClick={() => {
+        return <div className="infinite-list-item" onClick={() => {
                             this.props.handleOpenDialog(content)
                         }
                     }>
@@ -183,7 +185,7 @@ const FortisEvent = React.createClass({
                                        <span style={styles.newsItemTitle}>{newsItemTitle}</span>   
                                  }
                                     <i className="fa fa-clock-o fa-1"></i>&nbsp;
-                                    {getHumanDateFromNow(this.props.postedTime, MOMENT_FORMAT)}
+                                    {getHumanDateFromNow(this.props.postedTime, SERVICE_DATETIME_FORMAT)}
                                 </h6>
                             </div>
                             <div className="row" style={styles.contentRow}>
@@ -257,7 +259,8 @@ export const ActivityFeed = React.createClass({
         }
     }else{
         let tabSchema = Actions.constants.DATA_SOURCES.get(this.state.filteredSource);
-        tabs.push(<Tab label={tabSchema.label} 
+        tabs.push(<Tab key={tabSchema.label}
+                       label={tabSchema.label} 
                        value={this.state.filteredSource}
                        icon={<i style={iconStyle} className={`${tabSchema.icon}`}></i>}>
                   </Tab>)
@@ -458,7 +461,7 @@ export const ActivityFeed = React.createClass({
                                      sentence={feature.sentence}
                                      source={feature.source}
                                      originalSource={feature.originalSources && feature.originalSources.length > 0 ? feature.originalSources[0] : ""}
-                                     postedTime={moment(feature.createdtime, SERVICE_DATETIME_FORMAT).format(MOMENT_FORMAT)}
+                                     postedTime={feature.createdtime}
                                      sentiment={feature.sentiment}
                                      link={feature.link}
                                      edges={this.innerJoin(translatedDashboardEdges, this.translatedTerms(DEFAULT_LANGUAGE, feature.edges)).concat(otherTags)}
