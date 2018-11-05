@@ -1,18 +1,19 @@
 import React from 'react';
 import Fluxxor from 'fluxxor';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
-import ReactTable from 'react-table'
 import {AdminSiteList} from './AdminSiteList';
 import {AdminSettings} from './AdminSettings';
 import {AdminWatchlist} from './AdminWatchlist';
 import {CustomEventsEditor} from './CustomEventsEditor';
+import {FacebookPagesEditor} from './FacebookPagesEditor';
+import {BlacklistEditor} from './BlacklistEditor';
 import {AdminTwitterAccounts} from './AdminTwitterAccounts';
 import {AdminLocations} from './AdminLocations';
 import '../styles/Admin.css'
 
 const FluxMixin = Fluxxor.FluxMixin(React),
     StoreWatchMixin = Fluxxor.StoreWatchMixin("AdminStore");
-const SETTINGS_TAB = 0, WATCHLIST_TAB = 1, LOCATIONS_TAB = 2, CUSTOM_EVENTS_TAB = 3, TWITTER_ACCOUNTS_TAB = 5;
+const SETTINGS_TAB = 0, WATCHLIST_TAB = 1, LOCATIONS_TAB = 2, CUSTOM_EVENTS_TAB = 3, FB_PAGES_TAB = 4, TWITTER_ACCOUNTS_TAB = 5, BLACKLIST_TAB = 6;
 const styles = {
     container: {
         panel: {
@@ -39,6 +40,10 @@ export const Admin = React.createClass({
         this.getFlux().actions.ADMIN.load_localities(this.props.siteKey);
     },
 
+    componentWillReceiveProps(nextProps) {
+       this.setState(this.getStateFromFlux());
+    },
+
     getStateFromFlux() {
         return this.getFlux().store("AdminStore").getState();
     },
@@ -63,7 +68,7 @@ export const Admin = React.createClass({
                                     <TabList>
                                         <Tab>Site Settings</Tab>
                                         <Tab>Watchlist</Tab>
-                                        <Tab>Monitored Areas</Tab>
+                                        <Tab>Geofence / Monitored places</Tab>
                                         <Tab>Event Import</Tab>
                                         <Tab>Facebook pages</Tab>
                                         <Tab>Twitter API Accounts</Tab>
@@ -90,7 +95,7 @@ export const Admin = React.createClass({
                                           </div>
                                     </TabPanel>
                                     <TabPanel>
-                                        <h2>Monitored Locations</h2>
+                                        <h2>Monitored Places&nbsp;<small>(Hold ctrl to change the sites geofence=.)</small></h2>
                                         <div className="adminTable">
                                             {
                                                this.state.settings && this.state.settings.properties && this.state.locations && this.state.index === LOCATIONS_TAB ?
@@ -110,11 +115,10 @@ export const Admin = React.createClass({
                                     <TabPanel>
                                         <h2>Facebook pages</h2>
                                         <div className="adminTable">
-                                            <ReactTable
-                                                data={this.state.settings.fbPages}
-                                                columns={[{  header: 'URL', accessor: 'url' }]}
-                                                pageSize='10'
-                                                />
+                                            {
+                                             this.state.settings && this.state.settings.properties && this.state.index === FB_PAGES_TAB ? 
+                                                    <FacebookPagesEditor {...this.props}/> : undefined
+                                            }
                                         </div>
                                     </TabPanel>
                                     <TabPanel>
@@ -127,14 +131,13 @@ export const Admin = React.createClass({
                                         </div>
 
                                     </TabPanel>
-                                    <TabPanel>
+                                    <TabPanel> 
                                         <h2>Blacklisted Term(s)</h2>
                                         <div className="adminTable">
-                                            <ReactTable
-                                                data={this.state.settings.localities}
-                                                columns={[{  header: 'name', accessor: 'name' }, {  header: 'coordinates', accessor: 'coordinates' }]}
-                                                pageSize='10'
-                                                />
+                                            {
+                                             this.state.settings && this.state.settings.properties && this.state.index === BLACKLIST_TAB ? 
+                                                    <BlacklistEditor {...this.props}/> : undefined
+                                            }
                                         </div>
                                     </TabPanel>
                                 </Tabs>

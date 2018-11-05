@@ -78,14 +78,14 @@ const constants = {
            ADMIN : {
                LOAD_KEYWORDS: "LOAD:KEYWORDS",
                LOAD_SETTINGS: "LOAD:SETTINGS",
+               LOAD_BLACKLIST: "LOAD:BLACKLIST",
                SAVE_SETTINGS: "SAVE:SETTINGS",
                CREATE_SITE: "CREATE:SITE",
                SAVE_TWITTER_ACCTS: "SAVE:TWITTER_ACCTS",
                LOAD_TWITTER_ACCTS: "LOAD:TWITTER_ACCTS",
                LOAD_FB_PAGES: "LOAD:FB_PAGES",
                LOAD_LOCALITIES: "LOAD:LOCALITIES",
-               GET_LANGUAGE: "GET:LANGUAGE",
-               GET_TARGET_REGION: "GET:TARGET_REGION",
+               PUBLISHED_EVENTS: "SAVE:EVENT_PUBLISH",
                LOAD_FAIL: "LOAD:FAIL",
            },
 };
@@ -157,9 +157,9 @@ const methods = {
         changeDate(siteKey, datetimeSelection, timespanType){
            this.dispatch(constants.DASHBOARD.CHANGE_DATE, {datetimeSelection: datetimeSelection, timespanType: timespanType});
         },
-        loadDetail(siteKey, messageId, dataSources, fields=["messageid","sentence","edges","createdtime","sentiment","orig_language","source"]){
+        loadDetail(siteKey, messageId, dataSources, sourcePropeties){
             let self = this;
-            SERVICES.FetchMessageDetail(siteKey, messageId, dataSources, fields, {}, (error, response, body) => {
+            SERVICES.FetchMessageDetail(siteKey, messageId, dataSources, sourcePropeties, (error, response, body) => {
                 if (!error && response.statusCode === 200 && body.data) {
                     const data = body.data;
                     self.dispatch(constants.DASHBOARD.LOAD_DETAIL, data);
@@ -171,7 +171,6 @@ const methods = {
         },
         changeLanguage(language){
            this.dispatch(constants.DASHBOARD.CHANGE_LANGUAGE, language);
-           this.dispatch(constants.FACTS.CHANGE_LANGUAGE, language);
         }
     },
     FACTS: {
@@ -214,6 +213,9 @@ const methods = {
                     }, error => {
                         console.warning('Error, could not load fact id: ' + id, error);
                     });
+        },
+        changeLanguage(language){
+           this.dispatch(constants.FACTS.CHANGE_LANGUAGE, language);
         }
     },
     ADMIN: {
@@ -242,7 +244,7 @@ const methods = {
 
             SERVICES.createOrReplaceSite(siteName, modifiedSettings, (error, response, body) => {
                 if(!error && response.statusCode === 200 && body.data && body.data.createOrReplaceSite) {
-                    const action = 'Saved';
+                    const action = 'saved';
                     let mutatedSettings = Object.assign({}, {name: modifiedSettings.name}, {properties: modifiedSettings});
                     delete mutatedSettings.properties.name;
 
@@ -259,7 +261,7 @@ const methods = {
 
             SERVICES.createOrReplaceSite(siteName, modifiedSettings, (error, response, body) => {
                 if(!error && response.statusCode === 200 && body.data && body.data.createOrReplaceSite) {
-                    const action = 'Saved';
+                    const action = 'saved';
                     self.dispatch(constants.ADMIN.CREATE_SITE, {siteName, action});
                 }else{
                     console.error(`[${error}] occured while processing message request`);
@@ -306,19 +308,21 @@ const methods = {
                         }
             });
         },
-        load_keywords: function (siteId, languages) {
+        load_keywords: function (siteId) {
             let self = this;
             const edgeType = "Term";
             let dataStore = this.flux.stores.AdminStore.dataStore;
             if (!dataStore.loading) {
-                SERVICES.fetchEdges(siteId,languages, edgeType, (result,error) => {   
-                    if(result){            
-                        let action = false;
-                        self.dispatch(constants.ADMIN.LOAD_KEYWORDS, {result, action});
-                    }
-                    else{
-                        self.dispatch(constants.ADMIN.LOAD_FAIL, { error });
-                    }
+                SERVICES.fetchEdges(siteId, edgeType, (error, response, body) => {
+                        if (!error && response.statusCode === 200) {
+                            let response = body.data.terms.edges;
+                            
+                            let action = false;
+                            self.dispatch(constants.ADMIN.LOAD_KEYWORDS, {response, action});
+                        }else{
+                            let error = 'Error, could not load keywords for admin page';
+                            self.dispatch(constants.ADMIN.LOAD_FAIL, { error });
+                        }
                 })
             }
         },
@@ -328,7 +332,7 @@ const methods = {
             SERVICES.removeKeywords(siteId, deletedRows, (error, response, body) => {
                 if(!error && response.statusCode === 200 && body.data.removeKeywords) {
                     const response = body.data.removeKeywords.edges;
-                    const action = 'removed';
+                    const action = 'saved';
                     self.dispatch(constants.ADMIN.LOAD_KEYWORDS, {response, action});
                 }else{
                     console.error(`[${error}] occured while processing message request`);
@@ -359,6 +363,20 @@ const methods = {
                 }
             });
         },
+        publish_events: function(events){
+            SERVICES.publishCustomEvents(events, (err, response, body) => ResponseHandler(err, response, body, (error, graphqlResponse) => {
+                let action = 'saved';
+                let self = this;
+
+                if (graphqlResponse && !error) {
+                    self.dispatch(constants.ADMIN.PUBLISHED_EVENTS, {action});
+                }else{
+                    action = 'failed';
+                    console.error(`[${error}] occured while processing message request`);
+                    self.dispatch(constants.ADMIN.PUBLISHED_EVENTS, {action});
+                }
+            }));
+        },
         remove_locations: function(siteId, modifiedLocations){
             let self = this;
             SERVICES.removeLocations(siteId, modifiedLocations, (error, response, body) => {
@@ -386,47 +404,69 @@ const methods = {
             });
         },
 
-        load_fb_pages: function () {
+        load_fb_pages: function(siteId) {
             let self = this;
-            let dataStore = this.flux.stores.AdminStore.dataStore;
-            if (!dataStore.loading) {
-                SERVICES.getAdminFbPages()
-                    .subscribe(response => {
-                        self.dispatch(constants.ADMIN.LOAD_FB_PAGES, { fbPages: response });
-                    }, error => {
-                        console.warning('Error, could not load facts', error);
-                        self.dispatch(constants.ADMIN.LOAD_FAIL, { error: error });
-                    });
-            }
+
+            SERVICES.getAdminFbPages(siteId, (err, response, body) => ResponseHandler(err, response, body, (error, graphqlResponse) => {
+                let action = false;
+                if (graphqlResponse && !error) {
+                    const { pages } = graphqlResponse;
+                    self.dispatch(constants.ADMIN.LOAD_FB_PAGES, {action, pages});
+                }else{
+                    action = 'failed';
+                    console.error(`[${error}] occured while processing FB pages request`);
+                    self.dispatch(constants.ADMIN.LOAD_FB_PAGES, {action});
+                }
+            }));
+        },
+        load_blacklist: function(siteId) {
+            let self = this;
+
+            SERVICES.getBlacklistTerms(siteId, (err, response, body) => ResponseHandler(err, response, body, (error, graphqlResponse) => {
+                let action = false;
+                if (graphqlResponse && !error) {
+                    const { filters } = graphqlResponse;
+                    self.dispatch(constants.ADMIN.LOAD_BLACKLIST, {action, filters});
+                }else{
+                    action = 'failed';
+                    console.error(`[${error}] occured while processing FB pages request`);
+                    self.dispatch(constants.ADMIN.LOAD_BLACKLIST, {action});
+                }
+            }));
+        },
+        remove_fb_pages: function(siteId, pages){
+            let self = this;
+            SERVICES.removeFbPages(siteId, pages, (error, response, body) => ResponseHandler(error, response, body, (gError, graphqlResponse) => {
+                let action = false;
+
+                if (graphqlResponse && !gError) {
+                    const { pages } = graphqlResponse;
+                    action = "saved";
+                    self.dispatch(constants.ADMIN.LOAD_FB_PAGES, {action, pages});
+                }else{
+                    action = 'failed';
+                    console.error(`[${gError}] occured while processing FB pages request`);
+                    self.dispatch(constants.ADMIN.LOAD_FB_PAGES, {action});
+                }
+            }));
         },
 
-         get_language: function () {
+        save_fb_pages: function(siteId, pages){
             let self = this;
-            let dataStore = this.flux.stores.AdminStore.dataStore;
-            if (!dataStore.loading) {
-                SERVICES.getAdminLanguage()
-                    .subscribe(response => {
-                        self.dispatch(constants.ADMIN.GET_LANGUAGE, { language: response });
-                    }, error => {
-                        console.warning('Error, could not load facts', error);
-                        self.dispatch(constants.FACTS.LOAD_FAIL, { error: error });
-                    });
-            }
-        },
+            SERVICES.saveFbPages(siteId, pages, (error, response, body) => ResponseHandler(error, response, body, (gError, graphqlResponse) => {
+                let action = false;
 
-        get_target_region: function () {
-            let self = this;
-            let dataStore = this.flux.stores.AdminStore.dataStore;
-            if (!dataStore.loading) {
-                SERVICES.getAdminTargetRegion()
-                    .subscribe(response => {
-                        self.dispatch(constants.ADMIN.GET_TARGET_REGION, { targetRegion: response });
-                    }, error => {
-                        console.warning('Error, could not load facts', error);
-                        self.dispatch(constants.ADMIN.LOAD_FAIL, { error: error });
-                    });
-            }
-        }
+                if (graphqlResponse && !gError) {
+                    const { pages } = graphqlResponse;
+                    action = "saved";
+                    self.dispatch(constants.ADMIN.LOAD_FB_PAGES, {action, pages});
+                }else{
+                    action = 'failed';
+                    console.error(`[${gError}] occured while processing FB pages request`);
+                    self.dispatch(constants.ADMIN.LOAD_FB_PAGES, {action});
+                }
+            }));
+        },
     }
 };
 

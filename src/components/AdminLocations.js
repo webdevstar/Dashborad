@@ -2,6 +2,8 @@
 import React from 'react';
 import Fluxxor from 'fluxxor';
 import {DataGrid} from './DataGrid';
+import turfInside from 'turf-inside';
+import turfBbox from 'turf-bbox-polygon';
 import 'leaflet-area-select';
 import L from 'leaflet';
 import 'leaflet-geocoder-mapzen';
@@ -51,9 +53,8 @@ export const AdminLocations = React.createClass({
     getInitialState(){
         return {
             targetBbox: [],
-            localities: [],
             localAction: false,
-            locationsAdded: 0
+            locationsAdded: []
         }
     },
     addLocationsToCluster(locations){
@@ -75,20 +76,17 @@ export const AdminLocations = React.createClass({
             this.map.addLayer(this.markers);
       }
     },
-    componentWillReceiveProps(nextProps){
-        const localities = nextProps.rows;
-        
-        this.setState({localities});
-    },
     componentDidMount(){
         if(!this.map){
             this.bindLeafletMap(this.state.locations);
+            const targetBbox = this.state.settings.properties.targetBbox;
+            this.setState({targetBbox});
         }
     },
     refreshMapClusters(){
         if(this.markers){
             this.markers.clearLayers();
-            this.addLocationsToCluster(this.state.localities);
+            this.addLocationsToCluster(this.state.locations.concat(this.state.locationsAdded));
         }
     },
     bindLeafletMap(locations){
@@ -111,25 +109,30 @@ export const AdminLocations = React.createClass({
         this.map.selectArea.setShiftKey(false);
         this.addClusterGroup(locations);
         this.addGeocoder(bbox);
-        this.setState({localities: locations});
     },
     duplicateLocation(locationName){
-        const locationFromState = this.state.localities.filter(location => location.name.toLowerCase() === locationName.toLowerCase());
+        const locationFromState = this.state.locations.filter(location => location.name.toLowerCase() === locationName.toLowerCase());
 
         return (locationFromState.length > 0);
     },
     addGeocoder(bbox){
         if(this.map && bbox && bbox.length === 4){
+          if(this.geocoder){
+              this.geocoder.removeFrom(this.map);
+          }
+
           let self = this;
            const options = {
                bounds: L.latLngBounds(L.latLng(bbox[1], bbox[0]),  L.latLng(bbox[3], bbox[2])),
                position: 'topright',
+               sources: 'gn',
                layers: 'coarse'
             };
 
-            const geocoder = L.control.geocoder('mapzen-PcNq9SJ', options);
+            const geocoder = L.control.geocoder(this.state.settings.properties.mapzenApiKey, options);
             geocoder.on('select', e => {
-               let localities = self.state.localities;
+               let locationsAdded = self.state.locationsAdded;
+               const localAction = 'changed';
                const selectedLocation = {
                    name: e.feature.properties.name,
                    name_ar: "",
@@ -141,9 +144,8 @@ export const AdminLocations = React.createClass({
                };
 
                if(!self.duplicateLocation(selectedLocation.name)){
-                   localities.unshift(selectedLocation);
-                   let locationsAdded = this.state.locationsAdded + 1;
-                   self.setState({localities, locationsAdded, localAction: 'changed'});
+                   locationsAdded.unshift(selectedLocation);
+                   self.setState({locationsAdded, localAction});
                }else{
                    alert(`${selectedLocation.name} is already being monitored.`);
                }
@@ -151,7 +153,8 @@ export const AdminLocations = React.createClass({
                 geocoder.reset();
             });
 
-            geocoder.addTo(this.map)
+            geocoder.addTo(this.map);
+            this.geocoder = geocoder;
         }
     },
     setView(latitude, longitude, zoom){
@@ -159,12 +162,38 @@ export const AdminLocations = React.createClass({
     },
     addAreaSelectedEventListener(){
         if(this.map){
+            let self = this;
+
             this.map.on({
                 'areaselected': evt => {
-                    this.drawBBox(evt.bounds.toBBoxString().split(","));
+                    const targetBbox = evt.bounds.toBBoxString().split(",");
+                    self.drawBBox(targetBbox);
+                    const selectedRowKeys = self.locationsOutsideofBbox(turfBbox(targetBbox));
+                    self.setState({targetBbox, selectedRowKeys});
                 }
           });
         }
+    },
+    locationsOutsideofBbox(bboxPolygon){
+        const pointGeoJsonBase = {
+            "type": "Feature",
+            "geometry": {
+                   "type": "Point"
+            }
+        };
+
+        const locations = this.state.locations.concat(this.state.locationsAdded);
+
+        return locations.filter(location=>!turfInside( Object.assign({}, pointGeoJsonBase, 
+                                                                    {
+                                                                        geometry: {
+                                                                            "type": "Point",
+                                                                            coordinates: location.coordinates.split(",").map(point=>parseFloat(point))
+                                                                        }
+                                                                    }), 
+                                                                  bboxPolygon)
+                                            )
+                                     .map(location=>location.RowKey);
     },
     drawBBox(bbox){
         if(this.bbox) {
@@ -177,7 +206,7 @@ export const AdminLocations = React.createClass({
             this.bbox = L.rectangle(bounds, {weight: 2, color: '#0ff', fillOpacity: 0, clickable: false}).addTo(this.map);
             // zoom the map to the rectangle bounds
             this.map.fitBounds(bounds);
-            this.setState({targetBbox: bbox});
+            this.addGeocoder(bbox);
         }
     },
     getStateFromFlux() {
@@ -192,6 +221,7 @@ export const AdminLocations = React.createClass({
         this.getFlux().actions.ADMIN.remove_locations(this.props.siteKey, reducedRows);
     },
     render(){
+        let state = this.getFlux().store("AdminStore").getState();
         this.refreshMapClusters();
 
         return (
@@ -207,7 +237,7 @@ export const AdminLocations = React.createClass({
                         </div>
                         <div className="row">
                             {
-                                this.state.locationsAdded > 0 ? `Added ${this.state.locationsAdded} location(s) to watchlist.` : undefined
+                                this.state.locationsAdded.length > 0 ? `Added ${this.state.locationsAdded.length} location(s) to watchlist.` : undefined
                             }
                         </div>
                     </div>
@@ -219,8 +249,11 @@ export const AdminLocations = React.createClass({
                                 handleSave={this.handleLocationsSave}
                                 localAction={this.state.localAction}
                                 handleRemove={this.handleRemove}
+                                rowAddDisabled={true}
+                                rowsToMerge={this.state.locationsAdded}
+                                selectedRowKeys={this.state.selectedRowKeys || false}
                                 columns={this.state.locationGridColumns}
-                                rows={this.state.localities} />
+                                rows={state.locations} />
                         </div>
                     </div>
                 </div>
