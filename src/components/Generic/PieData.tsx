@@ -1,25 +1,39 @@
-import connectToStores from 'alt-utils/lib/connectToStores';
-import React, { Component } from 'react';
-import _ from 'lodash';
-import { PieChart, Pie, Sector, Cell, Legend } from 'recharts';
+import * as React from 'react';
 import {Card, CardHeader, CardMedia} from 'material-ui/Card';
+import { PieChart, Pie, Sector, Cell, Legend } from 'recharts';
 
-import colors from '../colors';
-import styles from '../styles';
+import * as _ from 'lodash';
+import * as moment from 'moment';
 
-import ConversionStore from '../../../stores/ConversionStore';
+import colors from '../Dashboard/colors';
+import styles from '../Dashboard/styles';
+var { ThemeColors } = colors;
 
-class ConversionsPie extends Component {
+interface IGraphProps {};
 
-  static getStores() {
-    return [ConversionStore];
+interface IGraphState {};
+
+export default class PieData extends React.Component<any, any> {
+
+  constructor(props) {
+    super(props);
+
+    this.onChange = this.onChange.bind(this);
+    this.state = props.store.getState();
   }
 
-  static getPropsFromStores() {
-    return ConversionStore.getState();
+  componentDidMount() {
+    this.props.store.listen(this.onChange);
   }
 
-  
+  componentWillUnmount() {
+    this.props.store.unlisten(this.onChange);
+  }
+
+  onChange(state) {
+    this.setState(state);
+  }
+
   renderActiveShape = (props) => {
     const { mode } = this.props;
     var type = mode === 'users' ? 'Users' : 'Messages';
@@ -37,7 +51,7 @@ class ConversionsPie extends Component {
     const ey = my;
     const textAnchor = cos >= 0 ? 'start' : 'end';
 
-    var c = {};
+    var c : any = {};
     c.midAngle = 54.11764705882353;
     c.sin = Math.sin(-RADIAN * c.midAngle);
     c.cos = Math.cos(-RADIAN * c.midAngle);
@@ -83,10 +97,10 @@ class ConversionsPie extends Component {
   };
   
   render() {
-    const { conversions } = this.props;
+    const { conversions } = this.state;
 
-    var total = _.find(conversions, { name: 'message.convert.start' });
-    var successful = _.find(conversions, { name: 'message.convert.end', successful: true }) || { event_count: 0 };
+    var total : any = _.find(conversions, { name: 'message.convert.start' });
+    var successful: any = _.find(conversions, { name: 'message.convert.end', successful: true }) || { event_count: 0 };
 
     if (!total) {
       return null;
@@ -126,5 +140,3 @@ class ConversionsPie extends Component {
     );
   }
 }
-
-export default connectToStores(ConversionsPie);
