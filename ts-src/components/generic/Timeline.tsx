@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { GenericComponent } from './GenericComponent';
+import { GenericComponent, IGenericProps, IGenericState } from './GenericComponent';
 import * as moment from 'moment';
 import * as _ from 'lodash';
 import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer} from 'recharts';
@@ -11,7 +11,13 @@ import styles from '../styles';
 var colors = styles.colors;
 var { ThemeColors } = colors;
 
-export default class Timeline extends GenericComponent<any> {
+interface ITimelineState extends IGenericState {
+  timeFormat: string
+  values: Object[]
+  lines: Object[]
+}
+
+export default class Timeline extends GenericComponent<IGenericProps, ITimelineState> {
   // static propTypes = {}
   // static defaultProps = {}
 
@@ -25,6 +31,7 @@ export default class Timeline extends GenericComponent<any> {
 
   render() {
     var { timeFormat, values, lines } = this.state;
+    var { title, subtitle } = this.props;
 
     var format = timeFormat === "hour" ? this.hourFormat : this.dateFormat;
 
@@ -36,8 +43,8 @@ export default class Timeline extends GenericComponent<any> {
     }
 
     return (
-      <Card title='Channel Usage'
-            subtitle="How many messages were send in each channel 2">
+      <Card title={ title }
+            subtitle={ subtitle }>
         <ResponsiveContainer>
           <LineChart data={values} margin={{top: 5, right: 30, left: 20, bottom: 5}}>
             <XAxis dataKey="time" tickFormatter={format} minTickGap={20}/>

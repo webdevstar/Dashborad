@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { GenericComponent, IGenericProps } from './GenericComponent';
+import { GenericComponent, IGenericProps, IGenericState } from './GenericComponent';
 import Card from '../Card';
 import { PieChart, Pie, Sector, Cell, Legend, ResponsiveContainer } from 'recharts';
 
@@ -20,7 +20,12 @@ interface IPieProps extends IGenericProps {
   }
 };
 
-export default class PieData extends GenericComponent<IPieProps> {
+interface IPieState extends IGenericState {
+  activeIndex?: number,
+  values?: Object[]
+}
+
+export default class PieData extends GenericComponent<IPieProps, IPieState> {
 
   state = {
     activeIndex: 0,
@@ -34,7 +39,7 @@ export default class PieData extends GenericComponent<IPieProps> {
   }
 
   onPieEnter(data, index) {
-    this.setState({ activeIndex: index});
+    this.setState({ activeIndex: index });
   }
 
   renderActiveShape = (props) => {
@@ -101,8 +106,8 @@ export default class PieData extends GenericComponent<IPieProps> {
   
   render() {
     var { values } = this.state;
-    var { props, layout } = this.props;
-    var { pieProps, showLegend, width, height } = props;
+    var { props, title, subtitle, layout } = this.props;
+    var { pieProps, showLegend } = props;
 
     if (!values) {
       return null;
@@ -110,8 +115,8 @@ export default class PieData extends GenericComponent<IPieProps> {
 
     // Todo: Receive the width of the SVG component from the container
     return (
-      <Card title="Conversion Usage"
-            subtitle={`Conversion Rate`}>
+      <Card title={ title }
+            subtitle={ subtitle }>
         <ResponsiveContainer>
           <PieChart>
             <Pie
