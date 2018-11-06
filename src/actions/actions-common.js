@@ -54,7 +54,7 @@ export default class ActionsCommon {
   }
 
   static timespanToGranularity(timespan) {
-    return timespan === '24 hours' ? '1h' : timespan === '1 week' ? '1d' : '1d';
+    return timespan === '24 hours' ? '5m' : timespan === '1 week' ? '1d' : '1d';
   }
 
     /**

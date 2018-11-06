@@ -1,37 +1,33 @@
 import * as React from 'react';
-import {Card, CardHeader, CardMedia} from 'material-ui/Card';
-import { PieChart, Pie, Sector, Cell, Legend } from 'recharts';
+import { GenericComponent } from './GenericComponent';
+import { Card, CardHeader, CardMedia } from 'material-ui/Card';
+import { PieChart, Pie, Sector, Cell, Legend, ResponsiveContainer } from 'recharts';
 
 import * as _ from 'lodash';
 import * as moment from 'moment';
 
-import colors from '../Dashboard/colors';
-import styles from '../Dashboard/styles';
+import styles from '../styles';
+var colors = styles.colors;
 var { ThemeColors } = colors;
 
 interface IGraphProps {};
 
 interface IGraphState {};
 
-export default class PieData extends React.Component<any, any> {
+export default class PieData extends GenericComponent<any> {
+
+  state = {
+    activeIndex: 0
+  }
 
   constructor(props) {
     super(props);
-
-    this.onChange = this.onChange.bind(this);
-    this.state = props.store.getState();
+  
+    this.onPieEnter = this.onPieEnter.bind(this);
   }
 
-  componentDidMount() {
-    this.props.store.listen(this.onChange);
-  }
-
-  componentWillUnmount() {
-    this.props.store.unlisten(this.onChange);
-  }
-
-  onChange(state) {
-    this.setState(state);
+  onPieEnter(data, index) {
+    this.setState({ activeIndex: index});
   }
 
   renderActiveShape = (props) => {
@@ -67,7 +63,7 @@ export default class PieData extends React.Component<any, any> {
 
     return (
       <g>
-        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>{payload.name}</text>
+        <text x={cx} y={cy} dy={8} textAnchor="middle" fill={fill}>{name}</text>
         <Sector
           cx={cx}
           cy={cy}
@@ -97,19 +93,12 @@ export default class PieData extends React.Component<any, any> {
   };
   
   render() {
-    const { conversions } = this.state;
+    var { values } = this.state;
+    var { pieProps, showLegend, width, height } = this.props.props;
 
-    var total : any = _.find(conversions, { name: 'message.convert.start' });
-    var successful: any = _.find(conversions, { name: 'message.convert.end', successful: true }) || { event_count: 0 };
-
-    if (!total) {
+    if (!values) {
       return null;
     }
-
-    var values = [
-      { name: 'Successful', value: successful.event_count },
-      { name: 'Failed', value: total.event_count - successful.event_count },
-    ];
 
     // Todo: Receive the width of the SVG component from the container
     return (
@@ -118,23 +107,30 @@ export default class PieData extends React.Component<any, any> {
             className='card-header'
             title="Conversion Usage"
             subtitle={`Conversion Rate`} />
-        <CardMedia style={styles.cardMediaStyle}>
-          <PieChart width={500} height={240}>
-            <Pie
-              data={values} 
-              cx={270} 
-              cy={120} 
-              innerRadius={60}
-              outerRadius={80} 
-              fill="#8884d8"
-              activeIndex={0}
-              activeShape={this.renderActiveShape.bind(this)} 
-              paddingAngle={0}>
-              <Cell key={0} fill={colors.GoodColor}/>
-              <Cell key={1} fill={colors.BadColor}/>
-            </Pie>
-            <Legend wrapperStyle={{ marginLeft: 70 }} />
-          </PieChart>
+        <CardMedia style={styles.cards.cardMediaStyle}>
+          <ResponsiveContainer>
+            <PieChart width={width || 500} height={height || 240}>
+              <Pie
+                data={values} 
+                cx={120} 
+                cy={120} 
+                innerRadius={60}
+                outerRadius={80} 
+                fill="#8884d8"
+                onMouseEnter={this.onPieEnter}
+                activeIndex={this.state.activeIndex}
+                activeShape={this.renderActiveShape.bind(this)} 
+                paddingAngle={0}
+                {...pieProps}>
+                {
+                  values.map((entry, index) => <Cell key={index} fill={ThemeColors[index % ThemeColors.length]}/>)
+                }
+                <Cell key={0} fill={colors.GoodColor}/>
+                <Cell key={1} fill={colors.BadColor}/>
+              </Pie>
+              {showLegend !== false && <Legend layout="vertical" align="right" verticalAlign="top" /> }
+            </PieChart>
+          </ResponsiveContainer>
         </CardMedia>
       </Card>
     );
