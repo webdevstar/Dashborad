@@ -58,7 +58,7 @@ class Timeline extends Component {
   changeMode(mode) {
     TimelineActions.updateMode(mode);
   }
-  
+
   render() {
     const { data, timespan, channels, excluded, mode } = this.props;
 
@@ -79,17 +79,21 @@ class Timeline extends Component {
       })
     }
 
-    var titleControls = [
-      <span>Channel Usage</span>,
-      <IconButton
-          Tooltip='Show data by messages'
-          className={classnames(mode == 'messages' && 'active')} 
-          onClick={this.changeMode.bind(this, 'messages')}><ActionQuestionAnswer /></IconButton>,
-      <IconButton 
-          Tooltip='Show data by users'
-          className={classnames(mode == 'users' && 'active')}
-          onClick={this.changeMode.bind(this, 'users')}><PersonIcon /></IconButton>
-    ];
+    var titleControls = (
+      <div>
+        <span key={0}>Channel Usage</span>,
+        <IconButton
+            key={1}
+            tooltip='Show data by messages'
+            className={classnames(mode == 'messages' && 'active')} 
+            onClick={this.changeMode.bind(this, 'messages')}><ActionQuestionAnswer /></IconButton>,
+        <IconButton 
+            key={2}
+            tooltip='Show data by users'
+            className={classnames(mode == 'users' && 'active')}
+            onClick={this.changeMode.bind(this, 'users')}><PersonIcon /></IconButton>
+      </div>
+    );
 
     return (
       <Card className='dash-card'>
@@ -102,9 +106,9 @@ class Timeline extends Component {
             <LineChart data={data} margin={{top: 5, right: 30, left: 20, bottom: 5}}
                        onClick={this.handleClick}>
               <XAxis dataKey="time" tickFormatter={format} minTickGap={20}/>
-              <YAxis/>
+              <YAxis type="number" domain={['dataMin', 'dataMax']}/>
               <CartesianGrid strokeDasharray="3 3"/>
-              <Tooltip/>
+              <Tooltip />
               <Legend/>
               {lines}
             </LineChart>

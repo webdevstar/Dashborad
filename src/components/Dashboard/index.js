@@ -92,17 +92,14 @@ export default class Dashboard extends Component {
   };
 
   onLayoutChange = (layout, layouts) => {
-    var a = 0;
     //this.props.onLayoutChange(layout, layouts);
   };
 
   render() {
-    const { className, ...props } = this.props;
-    const { activeItem } = this.state;
+    const { className } = this.props;
 
     return (
       <div className={classnames('Dashboard', className)}>
-        <b>{process.env.REACT_APP_APP_INSIGHTS_APPID}</b>
         <Timespan />
         <ResponsiveReactGridLayout
           {...this.props.grid}
