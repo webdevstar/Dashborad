@@ -12,7 +12,11 @@ class GeneralActions {
   constructor() {
     this.generateActions(
       'refreshFail',
-      'initialize'
+      'updateSearchTerm',
+      'selectHandler',
+      'searchResults',
+      'searchFail',
+      'selectError'
     );
   }
 

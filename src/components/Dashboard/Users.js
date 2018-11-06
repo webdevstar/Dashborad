@@ -3,6 +3,7 @@ import connectToStores from 'alt-utils/lib/connectToStores';
 import moment from 'moment';
 
 import {Card, CardHeader, CardMedia} from 'material-ui/Card';
+import Subheader from 'material-ui/Subheader';
 import {List, ListItem} from 'material-ui/List';
 import PersonIcon from 'material-ui/svg-icons/social/person';
 import Divider from 'material-ui/Divider';
@@ -11,6 +12,7 @@ import colors from './colors';
 import styles from './styles';
 
 import UsersStore from '../../stores/UsersStore';
+import UsersActions from '../../actions/UsersActions';
 import commonActions from '../../actions/actions-common';
 
 class Users extends Component {
@@ -37,7 +39,7 @@ class Users extends Component {
     var startDate = moment(commonActions.timespanStartDate(timespan));
     var active = users.filter(user => user.maxTimestamp.isAfter(startDate));
 
-    var newUsers = active.filter(user => user.count === 1);
+    var newUsers = active.filter(user => user.count == 1);
     var totalUsers = active.length;
     var countMedian = this.median(active, 'count');
     

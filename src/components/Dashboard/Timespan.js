@@ -5,7 +5,7 @@ import Checkbox from 'material-ui/Checkbox';
 import IconButton from 'material-ui/IconButton';
 import SelectAllIcon from 'material-ui/svg-icons/toggle/check-box';
 import SelectNoneIcon from 'material-ui/svg-icons/toggle/check-box-outline-blank';
-import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
+import { Toolbar, ToolbarGroup, ToolbarSeparator, ToolbarTitle } from 'material-ui/Toolbar';
 
 import TimespanStore from '../../stores/TimespanStore';
 import TimespanActions from '../../actions/TimespanActions';
@@ -31,6 +31,10 @@ class Timespan extends Component {
   static getPropsFromStores() {
     return TimespanStore.getState();
   }
+
+  constructor(props) {
+    super(props);
+  }
   
   componentDidMount() {
     TimespanActions.update24Hours();
@@ -38,12 +42,12 @@ class Timespan extends Component {
 
   onTimespanChange(timespan) {
     switch(timespan) {
+      case "24 hours":
+        return TimespanActions.update24Hours();
       case "1 week":
         return TimespanActions.update1Week();
       case "1 month":
         return TimespanActions.update1Month();
-      default:
-        return TimespanActions.update24Hours();
     }
   }
 
@@ -58,13 +62,12 @@ class Timespan extends Component {
   render() {
     const { timespan, channels, excluded } = this.props;
 
-    var buttons = ["24 hours", "1 week", "1 month"].map((time, idx) => {
-      return <FlatButton key={idx} label={time} primary={time === timespan} onClick={this.onTimespanChange.bind(null, time)} />
+    var buttons = ["24 hours", "1 week", "1 month"].map(time => {
+      return <FlatButton label={time} primary={time == timespan} onClick={this.onTimespanChange.bind(null, time)} />
     })
 
     var channelBoxes = channels.map(channel => {
         return <Checkbox 
-                  key={channel}
                   style={styles.channels} 
                   label={channel} 
                   checked={!excluded.includes(channel)} 
@@ -72,10 +75,10 @@ class Timespan extends Component {
     });
 
     var channelActions = channels.length === 0 ? [] : [
-        <IconButton key='sel-all' tooltip="Select all channels" onClick={this.toggleAllChannel.bind(null, true)}>
+        <IconButton tooltip="Select all channels" onClick={this.toggleAllChannel.bind(null, true)}>
           `<SelectAllIcon color='#555' />
         </IconButton>,
-        <IconButton key='sel-non' tooltip="Select no channels" onClick={this.toggleAllChannel.bind(null, false)}>
+        <IconButton tooltip="Select no channels" onClick={this.toggleAllChannel.bind(null, false)}>
           <SelectNoneIcon color='#555' />
         </IconButton>
     ];

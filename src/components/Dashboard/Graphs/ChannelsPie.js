@@ -1,5 +1,6 @@
 import connectToStores from 'alt-utils/lib/connectToStores';
 import React, { Component } from 'react';
+import moment from 'moment';
 import _ from 'lodash';
 import { PieChart, Pie, Sector, Cell, Tooltip, Legend } from 'recharts';
 import {Card, CardHeader, CardMedia} from 'material-ui/Card';
@@ -9,6 +10,7 @@ import styles from '../styles';
 var {ThemeColors} = colors;
 
 import TimelineStore from '../../../stores/TimelineStore';
+import TimelineActions from '../../../actions/TimelineActions';
 
 class ChannelsPie extends Component {
   // static propTypes = {}
@@ -38,7 +40,7 @@ class ChannelsPie extends Component {
 
   renderActiveShape = (props) => {
     const { mode } = this.props;
-    var type = mode === 'users' ? 'Users' : 'Messages';
+    var type = mode == 'users' ? 'Users' : 'Messages';
 
     const RADIAN = Math.PI / 180;
     const { name, cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle,
@@ -100,7 +102,7 @@ class ChannelsPie extends Component {
   
   render() {
     const { channelUsage, mode } = this.props;
-    var type = mode === 'users' ? 'Users' : 'Messages';
+    var type = mode == 'users' ? 'Users' : 'Messages';
 
     // Todo: Receive the width of the SVG component from the container
     return (
