@@ -1,17 +1,6 @@
-import * as React from 'react';
 import * as _ from 'lodash';
-import Graph from './Graph';
-import PieData from './PieData';
-import { Toolbar, ToolbarGroup } from 'material-ui/Toolbar';
 
-import * as ReactGridLayout from 'react-grid-layout';
-var ResponsiveReactGridLayout = ReactGridLayout.Responsive;
-var WidthProvider = ReactGridLayout.WidthProvider;
-ResponsiveReactGridLayout = WidthProvider(ResponsiveReactGridLayout);
-
-import { PipeComponent, IDataSourceDictionary } from '../../generic';
-
-var dashboard = {
+export default {
   dataSources: [{
       id: 'timespan',
       type: 'Constant',
@@ -269,6 +258,8 @@ var dashboard = {
     {
       id: 'conversions',
       type: 'PieData',
+      title: 'Conversion Rate',
+      subtitle: 'Total conversion rate',
       dependencies: { values: 'conversions:displayValues' },
       props: { 
         pieProps: { nameKey: 'label', valueKey: 'count' }
@@ -278,6 +269,8 @@ var dashboard = {
     {
       id: 'channels',
       type: 'PieData',
+      title: 'Channel Usage',
+      subtitle: 'Total messages sent per channel',
       dependencies: { values: 'timeline:channelUsage' },
       props: {
         width: 400,
@@ -288,6 +281,8 @@ var dashboard = {
     {
       id: 'timeline',
       type: 'Timeline',
+      title: 'Message Rate',
+      subtitle: 'How many messages were sent per timeframe',
       dependencies: { values: 'timeline:graphData', lines: 'timeline:channels', timeFormat: 'timeline:timeFormat' },
       props: { },
       actions: { }
@@ -295,173 +290,11 @@ var dashboard = {
     {
       id: 'intents',
       type: 'Scatter',
+      title: 'Intents Graph',
+      subtitle: 'Intents usage per time',
       dependencies: { values: 'timeline:graphData', lines: 'timeline:channels', timeFormat: 'timeline:timeFormat' },
       props: { },
       actions: { }
     }
   ]
 };
-
-function generateLayouts() {
-
-  return { 
-    lg: [
-      { "i": "timeline",    "x": 0, "y": 8, "w": 5, "h": 8 },
-      { "i": "channels",    "x": 5, "y": 8, "w": 3, "h": 8 },
-      { "i": "errors",      "x": 8, "y": 8, "w": 2, "h": 8 },
-      { "i": "users",       "x": 10, "y": 8, "w": 2, "h": 8 },
-      { "i": "intents",     "x": 0, "y": 16, "w": 4, "h": 8 },
-      { "i": "conversions", "x": 4, "y": 16, "w": 4, "h": 8 },
-      { "i": "sentiments",  "x": 8, "y": 16, "w": 4, "h": 8 }
-    ],
-    md: [
-      { "x": 0, "y": 8, "w": 5, "h": 8, "i": "0" },
-      { "x": 5, "y": 8, "w": 5, "h": 8, "i": "1" },
-      { "x": 10, "y": 8, "w": 2, "h": 8, "i": "2" },
-      { "x": 0, "y": 16, "w": 5, "h": 8, "i": "3" }
-    ],
-    sm: [
-      { "x": 0, "y": 8, "w": 5, "h": 8, "i": "0" },
-      { "x": 5, "y": 8, "w": 5, "h": 8, "i": "1" },
-      { "x": 10, "y": 8, "w": 2, "h": 8, "i": "2" },
-      { "x": 0, "y": 16, "w": 5, "h": 8, "i": "3" }
-    ],
-    xs: [
-      { "x": 0, "y": 8, "w": 5, "h": 8, "i": "0" },
-      { "x": 5, "y": 8, "w": 5, "h": 8, "i": "1" },
-      { "x": 10, "y": 8, "w": 2, "h": 8, "i": "2" },
-      { "x": 0, "y": 16, "w": 5, "h": 8, "i": "3" }
-    ],
-    xxs: [
-      { "x": 0, "y": 8, "w": 5, "h": 8, "i": "0" },
-      { "x": 5, "y": 8, "w": 5, "h": 8, "i": "1" },
-      { "x": 10, "y": 8, "w": 2, "h": 8, "i": "2" },
-      { "x": 0, "y": 16, "w": 5, "h": 8, "i": "3" }
-    ]
-  }
-}
-
-export default class Dashboard extends React.Component < any, any > {
-
-  static defaultProps = {
-    grid: {
-      className: "layout",
-      rowHeight: 30,
-      cols: {lg: 12, md: 10, sm: 6, xs: 4, xxs: 2},
-      breakpoints: {lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0},
-      layouts: generateLayouts()
-    }
-  };
-
-  dataSources: IDataSourceDictionary = {};
-
-  constructor(props) {
-    super(props);
-
-    dashboard.dataSources.forEach(source => {
-      var dataSource = PipeComponent.createDataSource(source);
-      this.dataSources[dataSource.id] = dataSource;
-    });
-
-    this.state = {
-      currentBreakpoint: 'lg',
-      mounted: false,
-      layouts: {lg: this.props.initialLayout},
-    };
-  }
-
-  componentDidMount() {
-
-    this.setState({mounted: true});
-
-    // Connect sources and dependencies
-    var sources = Object.keys(this.dataSources);
-    sources.forEach(sourceId => {
-      var source = this.dataSources[sourceId];
-
-      source.store.listen((state) => {
-
-        sources.forEach(compId => {
-          var compSource = this.dataSources[compId];
-          if (compSource.plugin.getDependencies()[sourceId]) {
-            compSource.action.updateDependencies.defer(state);
-          }
-        });
-      });
-    });
-
-    // Call initalize methods
-    sources.forEach(sourceId => {
-      var source = this.dataSources[sourceId];
-
-      if (typeof source.action['initialize'] === 'function') {
-        source.action.initialize();
-      }
-    });
-  }
-
-  onBreakpointChange = (breakpoint) => {
-    this.setState({
-      currentBreakpoint: breakpoint
-    });
-  };
-
-  onLayoutChange = (layout, layouts) => {
-    //this.props.onLayoutChange(layout, layouts);
-  };
-
-  render() {
-
-    var elements = [];
-    dashboard.elements.forEach((element, idx) => {
-      var ReactElement = require('./' + element.type)['default'];
-      elements.push(
-        <div key={element.id}>
-          <ReactElement 
-                key={idx} 
-                dependencies={element.dependencies}
-                actions={element.actions}
-                props={element.props}
-          />
-        </div>
-      )
-    });
-
-    var filters = [];
-    var additionalFilters = [];
-    dashboard.filters.forEach((element, idx) => {
-      var ReactElement = require('./' + element.type)['default'];
-      (element.first ? filters : additionalFilters).push(
-        <ReactElement 
-              key={idx} 
-              dependencies={element.dependencies}
-              actions={element.actions}
-        />
-      )
-    });
-
-    return ( 
-      <div>
-        <Toolbar>
-          <ToolbarGroup firstChild={true}>
-            {filters}
-          </ToolbarGroup>
-          <ToolbarGroup>
-            {additionalFilters}
-          </ToolbarGroup>
-        </Toolbar>
-        <ResponsiveReactGridLayout
-          {...this.props.grid}
-          onBreakpointChange={this.onBreakpointChange}
-          onLayoutChange={this.onLayoutChange}
-          // WidthProvider option
-          measureBeforeMount={false}
-          // I like to have it animate on mount. If you don't, delete `useCSSTransforms` (it's default `true`)
-          // and set `measureBeforeMount={true}`.
-          useCSSTransforms={this.state.mounted}>
-          {elements}
-        </ResponsiveReactGridLayout>
-      </div>
-    );
-  }
-}

@@ -1,12 +1,21 @@
 import * as React from 'react';
 import { PipeComponent, IDataSourceDictionary } from '../../generic';
 
-interface IGenericProps {
+export interface IGenericProps {
+  title: string;
+  subtitle: string;
   dependencies: { [key: string] : string };
   actions: { [key: string] : string };
+  props: { [key: string] : Object };
+  layout: {
+    "x": number;
+    "y": number;
+    "w": number;
+    "h": number;
+  }
 }
 
-interface IGenericState { [key: string] : any }
+export interface IGenericState { [key: string] : any }
 
 export abstract class GenericComponent<T1 extends IGenericProps> extends React.Component<T1, IGenericState> {
   // static propTypes = {}
