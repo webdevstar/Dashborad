@@ -1,12 +1,9 @@
 import * as React from 'react';
 import * as _ from 'lodash';
-import plugins from '../components/generic/plugins';
-import Dialogs from '../components/generic/Dialogs';
+import plugins from './generic/plugins';
 
-var { Dialog } = Dialogs;
-
-export default class Elements {
-  static loadLayoutFromDashboard(dashboard: IDashboardConfig) : ILayouts {
+export default class ElementConnector {
+  static loadLayoutFromDashboard(elementsContainer: IElementsContainer, dashboard: IDashboardConfig) : ILayouts {
     
     var layouts = {};
     _.each(dashboard.config.layout.cols, (totalColumns, key) => {
@@ -16,7 +13,7 @@ export default class Elements {
       var maxRowHeight = 0;
 
       // Go over all elements in the dashboard and check their size
-      dashboard.elements.forEach(element => {
+      elementsContainer.elements.forEach(element => {
         var { id, size } = element;
 
         if (curCol > 0 && (curCol + size.w) >= totalColumns) {
@@ -41,14 +38,13 @@ export default class Elements {
     return layouts;
   }
 
-  static loadElementsFromDashboard(dashboard: IDashboardConfig, layout: ILayout): React.Component<any, any>[] {
+  static loadElementsFromDashboard(dashboard: IElementsContainer, layout: ILayout[]): React.Component<any, any>[] {
     var elements = [];
-    var _layout : any = layout;
 
     dashboard.elements.forEach((element, idx) => {
       var ReactElement = plugins[element.type];
-      var { id, dependencies, actions, props, title, subtitle, size } = element;
-      var layoutProps = _.find(_layout, { "i": id });
+      var { id, dependencies, actions, props, title, subtitle, size, theme } = element;
+      var layoutProps = _.find(layout, { "i": id });
 
       elements.push(
         <div key={id}>
@@ -60,6 +56,7 @@ export default class Elements {
                 title={title}
                 subtitle={subtitle}
                 layout={layoutProps}
+                theme={theme}
           />
         </div>
       )
@@ -86,18 +83,5 @@ export default class Elements {
     });
 
     return { filters, additionalFilters };
-  }
-
-  static loadDialogsFromDashboard(dashboard: IDashboardConfig): JSX.Element[] {
-
-    if (!dashboard.dialogs) {
-      return null;
-    }
-
-    var dialogs = dashboard.dialogs.map((dialog, idx) => 
-      <Dialog key={idx} id={dialog.id} />
-    );
-
-    return dialogs
   }
 }

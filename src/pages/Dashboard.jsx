@@ -1,11 +1,14 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = require("react");
 const Toolbars_1 = require("react-md/lib/Toolbars");
+const Spinner_1 = require("../components/generic/Spinner");
 const ReactGridLayout = require("react-grid-layout");
 var ResponsiveReactGridLayout = ReactGridLayout.Responsive;
 var WidthProvider = ReactGridLayout.WidthProvider;
 ResponsiveReactGridLayout = WidthProvider(ResponsiveReactGridLayout);
-const generic_1 = require("../generic");
+const data_sources_1 = require("../data-sources");
+const ElementConnector_1 = require("../components/ElementConnector");
+const Dialogs_1 = require("../components/generic/Dialogs");
 const temp_1 = require("./temp");
 const layout = temp_1.default.config.layout;
 class Dashboard extends React.Component {
@@ -35,50 +38,29 @@ class Dashboard extends React.Component {
                 layouts: newLayouts
             });
         };
-        temp_1.default.dataSources.forEach(source => {
-            var dataSource = generic_1.PipeComponent.createDataSource(source);
-            this.dataSources[dataSource.id] = dataSource;
-        });
+        data_sources_1.DataSourceConnector.createDataSources(temp_1.default, this.dataSources);
         // For each column, create a layout according to number of columns
-        var layouts = generic_1.Elements.loadLayoutFromDashboard(temp_1.default);
+        var layouts = ElementConnector_1.default.loadLayoutFromDashboard(temp_1.default, temp_1.default);
         this.layouts = layouts;
         this.state.layouts = { lg: layouts['lg'] };
     }
     componentDidMount() {
         this.setState({ mounted: true });
-        // Connect sources and dependencies
-        var sources = Object.keys(this.dataSources);
-        sources.forEach(sourceId => {
-            var source = this.dataSources[sourceId];
-            source.store.listen((state) => {
-                sources.forEach(compId => {
-                    var compSource = this.dataSources[compId];
-                    if (compSource.plugin.getDependencies()[sourceId]) {
-                        compSource.action.updateDependencies.defer(state);
-                    }
-                });
-            });
-        });
-        // Call initalize methods
-        sources.forEach(sourceId => {
-            var source = this.dataSources[sourceId];
-            if (typeof source.action['initialize'] === 'function') {
-                source.action.initialize();
-            }
-        });
+        data_sources_1.DataSourceConnector.connectDataSources(this.dataSources);
     }
     render() {
         var { currentBreakpoint } = this.state;
         var layout = this.state.layouts[currentBreakpoint];
         // Creating visual elements
-        var elements = generic_1.Elements.loadElementsFromDashboard(temp_1.default, layout);
+        var elements = ElementConnector_1.default.loadElementsFromDashboard(temp_1.default, layout);
         // Creating filter elements
-        var { filters, additionalFilters } = generic_1.Elements.loadFiltersFromDashboard(temp_1.default);
+        var { filters, additionalFilters } = ElementConnector_1.default.loadFiltersFromDashboard(temp_1.default);
         // Loading dialogs
-        var dialogs = generic_1.Elements.loadDialogsFromDashboard(temp_1.default);
+        var dialogs = Dialogs_1.default.loadDialogsFromDashboard(temp_1.default);
         return (<div style={{ width: '100%' }}>
         <Toolbars_1.default>
           {filters}
+          <Spinner_1.default />
         </Toolbars_1.default>
         <ResponsiveReactGridLayout {...this.props.grid} layouts={this.state.layouts} onBreakpointChange={this.onBreakpointChange} onLayoutChange={this.onLayoutChange} 
         // WidthProvider option

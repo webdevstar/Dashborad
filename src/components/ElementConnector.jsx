@@ -1,18 +1,16 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const React = require("react");
 const _ = require("lodash");
-const plugins_1 = require("../components/generic/plugins");
-const Dialogs_1 = require("../components/generic/Dialogs");
-var { Dialog } = Dialogs_1.default;
-class Elements {
-    static loadLayoutFromDashboard(dashboard) {
+const plugins_1 = require("./generic/plugins");
+class ElementConnector {
+    static loadLayoutFromDashboard(elementsContainer, dashboard) {
         var layouts = {};
         _.each(dashboard.config.layout.cols, (totalColumns, key) => {
             var curCol = 0;
             var curRowOffset = 0;
             var maxRowHeight = 0;
             // Go over all elements in the dashboard and check their size
-            dashboard.elements.forEach(element => {
+            elementsContainer.elements.forEach(element => {
                 var { id, size } = element;
                 if (curCol > 0 && (curCol + size.w) >= totalColumns) {
                     curCol = 0;
@@ -34,13 +32,12 @@ class Elements {
     }
     static loadElementsFromDashboard(dashboard, layout) {
         var elements = [];
-        var _layout = layout;
         dashboard.elements.forEach((element, idx) => {
             var ReactElement = plugins_1.default[element.type];
-            var { id, dependencies, actions, props, title, subtitle, size } = element;
-            var layoutProps = _.find(_layout, { "i": id });
+            var { id, dependencies, actions, props, title, subtitle, size, theme } = element;
+            var layoutProps = _.find(layout, { "i": id });
             elements.push(<div key={id}>
-          <ReactElement key={idx} dependencies={dependencies} actions={actions || {}} props={props || {}} title={title} subtitle={subtitle} layout={layoutProps}/>
+          <ReactElement key={idx} dependencies={dependencies} actions={actions || {}} props={props || {}} title={title} subtitle={subtitle} layout={layoutProps} theme={theme}/>
         </div>);
         });
         return elements;
@@ -54,12 +51,5 @@ class Elements {
         });
         return { filters, additionalFilters };
     }
-    static loadDialogsFromDashboard(dashboard) {
-        if (!dashboard.dialogs) {
-            return null;
-        }
-        var dialogs = dashboard.dialogs.map((dialog, idx) => <Dialog key={idx} id={dialog.id}/>);
-        return dialogs;
-    }
 }
-exports.default = Elements;
+exports.default = ElementConnector;

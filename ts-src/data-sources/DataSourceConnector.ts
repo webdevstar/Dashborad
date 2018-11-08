@@ -1,6 +1,6 @@
 import alt from '../alt';
 import * as _ from 'lodash';
-import {IDataSourcePlugin} from './plugins/DataSourcePlugin';
+import { IDataSourcePlugin } from './plugins/DataSourcePlugin';
 import Dialogs from '../components/generic/Dialogs'
 
 export interface IDataSource {
@@ -20,7 +20,7 @@ export interface IExtrapolationResult {
   dependencies: { [key: string] : any };
 }
 
-export class PipeComponent {
+export class DataSourceConnector {
 
   private static dataSources: IDataSourceDictionary = {};
 
@@ -37,12 +37,12 @@ export class PipeComponent {
     var plugin : any = new PluginClass.default(config);
     
     // Creating actions class
-    var ActionClass = PipeComponent.createActionClass(plugin);
+    var ActionClass = DataSourceConnector.createActionClass(plugin);
 
     // Creating store class
-    var StoreClass = PipeComponent.createStoreClass(config, plugin, ActionClass);
+    var StoreClass = DataSourceConnector.createStoreClass(config, plugin, ActionClass);
 
-    PipeComponent.dataSources[config.id] = {
+    DataSourceConnector.dataSources[config.id] = {
       id: config.id,
       config,
       plugin,
@@ -50,7 +50,50 @@ export class PipeComponent {
       store: StoreClass
     }
 
-    return PipeComponent.dataSources[config.id];
+    return DataSourceConnector.dataSources[config.id];
+  }
+
+  static createDataSources(dsContainer: IDataSourceContainer, containerDataSources: IDataSourceDictionary) {
+    dsContainer.dataSources.forEach(source => {
+      var dataSource = DataSourceConnector.createDataSource(source);
+      containerDataSources[dataSource.id] = dataSource;
+    });
+  }
+
+  static connectDataSources(dataSources: IDataSourceDictionary) {
+    // Connect sources and dependencies
+    var sourcesIDs = Object.keys(dataSources);
+    sourcesIDs.forEach(sourceDSId => {
+      var sourceDS = dataSources[sourceDSId];
+
+      sourceDS.store.listen((state) => {
+
+        sourcesIDs.forEach(checkDSId => {
+          var checkDS = dataSources[checkDSId];
+          var dependencies = checkDS.plugin.getDependencies() || {};
+
+          let connected = _.find(_.keys(dependencies), dependencyKey => {
+            let dependencyValue = dependencies[dependencyKey] || '';
+            return (dependencyValue === sourceDSId || dependencyValue.startsWith(sourceDSId + ':'));
+          })
+
+          if (connected) {
+
+            // Todo: add check that all dependencies are met
+            checkDS.action.updateDependencies.defer(state);
+          }
+        });
+      });
+    });
+
+    // Call initalize methods
+    sourcesIDs.forEach(sourceDSId => {
+      var sourceDS = dataSources[sourceDSId];
+
+      if (typeof sourceDS.action['initialize'] === 'function') {
+        sourceDS.action.initialize();
+      }
+    });
   }
 
   static extrapolateDependencies(dependencies: IStringDictionary, args?: IDictionary): IExtrapolationResult {
@@ -73,7 +116,7 @@ export class PipeComponent {
         let valueName = dependsUpon[1];
         result.dependencies[key] = args[valueName];
       } else {
-        let dataSource = PipeComponent.dataSources[dataSourceName];
+        let dataSource = DataSourceConnector.dataSources[dataSourceName];
         if (!dataSource) {
           throw new Error('Could not find data source for depedency ' + dependencies[key]);
         }
@@ -89,7 +132,7 @@ export class PipeComponent {
     return result;
   }
 
-  static triggerAction(action: string, params: IStringDictionary, args: any[]) {
+  static triggerAction(action: string, params: IStringDictionary, args: IDictionary) {
     var actionLocation = action.split(':');
 
     if (actionLocation.length !== 2) {
@@ -101,12 +144,12 @@ export class PipeComponent {
 
     if (dataSourceName === 'dialog') {
 
-      var extrapolation = PipeComponent.extrapolateDependencies(params, args);
+      var extrapolation = DataSourceConnector.extrapolateDependencies(params, args);
 
       Dialogs.DialogsActions.openDialog(actionName, extrapolation.dependencies);
     } else {
       
-      var dataSource = PipeComponent.dataSources[dataSourceName];
+      var dataSource = DataSourceConnector.dataSources[dataSourceName];
       if (!dataSource) {
         throw new Error(`Data source ${dataSourceName} was not found`)
       }
@@ -128,7 +171,7 @@ export class PipeComponent {
         NewActionClass.prototype[action] = function (...args) {
 
           // Collecting depedencies from all relevant stores
-          var extrapolation = PipeComponent.extrapolateDependencies(plugin.getDependencies());
+          var extrapolation = DataSourceConnector.extrapolateDependencies(plugin.getDependencies());
 
           // Calling action with arguments
           var result = plugin[action].call(this, extrapolation.dependencies, ...args) || {};
@@ -138,12 +181,12 @@ export class PipeComponent {
             return (dispatch) => {
               result(function (obj) {
                 obj = obj || {};
-                var fullResult = PipeComponent.callibrateResult(obj, plugin);
+                var fullResult = DataSourceConnector.callibrateResult(obj, plugin);
                 dispatch(fullResult);
               });
             }
           } else {
-            var fullResult = PipeComponent.callibrateResult(result, plugin);
+            var fullResult = DataSourceConnector.callibrateResult(result, plugin);
             return fullResult;
           }
         }
@@ -193,7 +236,7 @@ export class PipeComponent {
 
     // Callibrate calculated values
     var calculated = plugin._props.calculated;
-    var state = PipeComponent.dataSources[plugin._props.id].store.getState();
+    var state = DataSourceConnector.dataSources[plugin._props.id].store.getState();
 
     state = _.extend(state, result);
 

@@ -3,13 +3,16 @@ import * as _ from 'lodash';
 import plugins from '../components/generic/plugins';
 
 import Toolbar from 'react-md/lib/Toolbars';
+import Spinner from '../components/generic/Spinner';
 
 import * as ReactGridLayout from 'react-grid-layout';
 var ResponsiveReactGridLayout = ReactGridLayout.Responsive;
 var WidthProvider = ReactGridLayout.WidthProvider;
 ResponsiveReactGridLayout = WidthProvider(ResponsiveReactGridLayout);
 
-import { PipeComponent, IDataSourceDictionary, Elements } from '../generic';
+import { DataSourceConnector, IDataSourceDictionary } from '../data-sources';
+import ElementConnector from  '../components/ElementConnector';
+import Dialogs from '../components/generic/Dialogs';
 
 import dashboard from './temp';
 const layout = dashboard.config.layout;
@@ -44,13 +47,10 @@ export default class Dashboard extends React.Component<any, IDashboardState> {
   constructor(props) {
     super(props);
 
-    dashboard.dataSources.forEach(source => {
-      var dataSource = PipeComponent.createDataSource(source);
-      this.dataSources[dataSource.id] = dataSource;
-    });
+    DataSourceConnector.createDataSources(dashboard, this.dataSources);
 
     // For each column, create a layout according to number of columns
-    var layouts = Elements.loadLayoutFromDashboard(dashboard);
+    var layouts = ElementConnector.loadLayoutFromDashboard(dashboard, dashboard);
     
     this.layouts = layouts;
     this.state.layouts = { lg: layouts['lg'] };
@@ -60,30 +60,7 @@ export default class Dashboard extends React.Component<any, IDashboardState> {
 
     this.setState({ mounted: true });
 
-    // Connect sources and dependencies
-    var sources = Object.keys(this.dataSources);
-    sources.forEach(sourceId => {
-      var source = this.dataSources[sourceId];
-
-      source.store.listen((state) => {
-
-        sources.forEach(compId => {
-          var compSource = this.dataSources[compId];
-          if (compSource.plugin.getDependencies()[sourceId]) {
-            compSource.action.updateDependencies.defer(state);
-          }
-        });
-      });
-    });
-
-    // Call initalize methods
-    sources.forEach(sourceId => {
-      var source = this.dataSources[sourceId];
-
-      if (typeof source.action['initialize'] === 'function') {
-        source.action.initialize();
-      }
-    });
+    DataSourceConnector.connectDataSources(this.dataSources);
   }
 
   onBreakpointChange = (breakpoint) => {
@@ -111,18 +88,19 @@ export default class Dashboard extends React.Component<any, IDashboardState> {
     var layout = this.state.layouts[currentBreakpoint];
 
     // Creating visual elements
-    var elements = Elements.loadElementsFromDashboard(dashboard, layout)
+    var elements = ElementConnector.loadElementsFromDashboard(dashboard, layout)
 
     // Creating filter elements
-    var { filters, additionalFilters } = Elements.loadFiltersFromDashboard(dashboard);
+    var { filters, additionalFilters } = ElementConnector.loadFiltersFromDashboard(dashboard);
 
     // Loading dialogs
-    var dialogs = Elements.loadDialogsFromDashboard(dashboard);
+    var dialogs = Dialogs.loadDialogsFromDashboard(dashboard);
 
     return ( 
       <div style={{ width: '100%' }}>
         <Toolbar>
           { filters }
+          <Spinner />
         </Toolbar>
         <ResponsiveReactGridLayout
           { ...this.props.grid }

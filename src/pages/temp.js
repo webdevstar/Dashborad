@@ -1,5 +1,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const _ = require("lodash");
+const colors_1 = require("../components/colors");
 exports.default = {
     config: {
         layout: {
@@ -176,6 +177,7 @@ exports.default = {
             title: 'Message Rate',
             subtitle: 'How many messages were sent per timeframe',
             size: { w: 5, h: 8 },
+            theme: colors_1.default.ThemeColors2,
             dependencies: { values: 'timeline:graphData', lines: 'timeline:channels', timeFormat: 'timeline:timeFormat' }
         },
         {
@@ -223,6 +225,7 @@ exports.default = {
             title: 'Conversion Rate',
             subtitle: 'Total conversion rate',
             size: { w: 4, h: 8 },
+            theme: colors_1.default.ThemeColors2,
             dependencies: { values: 'conversions:displayValues' },
             props: {
                 pieProps: { nameKey: 'label', valueKey: 'count' }
@@ -232,13 +235,13 @@ exports.default = {
     dialogs: [
         {
             id: "conversations",
-            //trigger: "openDialog('conversations', { intent: 'set.alarm', timespan: '24 hours' })",
-            params: ['intent', 'queryspan'],
+            width: '60%',
+            params: ['title', 'intent', 'queryspan'],
             dataSources: [
                 {
                     id: 'conversations-data',
                     type: 'ApplicationInsights/Query',
-                    dependencies: { intent: 'dialog:intent', queryTimespan: 'dialog:queryspan' },
+                    dependencies: { intent: 'dialog_conversations:intent', queryTimespan: 'dialog_conversations:queryspan' },
                     params: {
                         query: ({ intent }) => ` customEvents` +
                             ` | extend conversation = customDimensions.conversationId, intent=customDimensions.intent` +
@@ -256,7 +259,7 @@ exports.default = {
                     id: 'conversations-list',
                     type: 'Table',
                     title: 'Conversations',
-                    size: { w: 4, h: 16 },
+                    size: { w: 12, h: 16 },
                     dependencies: { values: 'conversations-data' },
                     props: {
                         cols: [{
@@ -266,8 +269,66 @@ exports.default = {
                                 header: 'Count',
                                 field: 'count'
                             }, {
-                                type: 'icon',
-                                value: 'done'
+                                type: 'button',
+                                value: 'chat',
+                                onClick: 'openMessagesDialog'
+                            }]
+                    },
+                    actions: {
+                        openMessagesDialog: {
+                            action: 'dialog:messages',
+                            params: {
+                                title: 'args:id',
+                                conversation: 'args:id',
+                                queryspan: 'timespan:queryTimespan'
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            id: "messages",
+            width: '50%',
+            params: ['title', 'conversation', 'queryspan'],
+            dataSources: [
+                {
+                    id: 'messages-data',
+                    type: 'ApplicationInsights/Query',
+                    dependencies: { conversation: 'dialog_messages:conversation', queryTimespan: 'dialog_messages:queryspan' },
+                    params: {
+                        query: ({ conversation }) => ` customEvents` +
+                            ` | extend conversation = customDimensions.conversationId, intent=customDimensions.intent` +
+                            ` | where name in ("message.send", "message.received") and conversation == '${conversation}'` +
+                            ` | order by timestamp asc` +
+                            ` | project timestamp, name, customDimensions.text, customDimensions.userName, customDimensions.userId`,
+                        mappings: [
+                            { key: 'timestamp' },
+                            { key: 'eventName' },
+                            { key: 'message' },
+                            { key: 'userName' },
+                            { key: 'userId' }
+                        ]
+                    }
+                }
+            ],
+            elements: [
+                {
+                    id: 'messages-list',
+                    type: 'Table',
+                    title: 'Messages',
+                    size: { w: 12, h: 16 },
+                    dependencies: { values: 'messages-data' },
+                    props: {
+                        cols: [{
+                                header: 'Timestamp',
+                                width: '50px',
+                                field: 'timestamp',
+                                type: 'time',
+                                format: 'MMM-DD HH:mm:ss'
+                            }, {
+                                header: 'Message',
+                                field: 'message'
                             }]
                     }
                 }
