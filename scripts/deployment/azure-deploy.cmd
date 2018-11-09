@@ -112,6 +112,7 @@ IF EXIST "%DEPLOYMENT_TARGET%\package.json" (
     echo Yarn is installed
   )
 
+
   call :ExecuteCmd yarn install
   call :ExecuteCmd yarn build
   IF !ERRORLEVEL! NEQ 0 goto error

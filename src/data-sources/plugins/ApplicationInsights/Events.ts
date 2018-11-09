@@ -3,7 +3,7 @@
 import * as _ from 'lodash';
 import {DataSourcePlugin, IDataSourceOptions} from '../DataSourcePlugin';
 //import ActionsCommon from './actions-common';
-import { appInsightsUri } from './common';
+import { appInsightsUri, appId, apiKey } from './common';
 
 declare var process : any;
 
