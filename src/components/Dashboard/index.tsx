@@ -4,6 +4,8 @@ import * as _ from 'lodash';
 import Toolbar from 'react-md/lib/Toolbars';
 import Button from 'react-md/lib/Buttons';
 import Dialog from 'react-md/lib/Dialogs';
+import Divider from 'react-md/lib/Dividers';
+
 import { Spinner } from '../Spinner';
 
 import * as ReactGridLayout from 'react-grid-layout';
@@ -14,6 +16,7 @@ ResponsiveReactGridLayout = WidthProvider(ResponsiveReactGridLayout);
 import ElementConnector from '../ElementConnector';
 import { loadDialogsFromDashboard } from '../generic/Dialogs';
 
+import SettingsButton from '../ConfigDashboard/SettingsButton';
 import ConfigurationsActions from '../../actions/ConfigurationsActions';
 import ConfigurationsStore from '../../stores/ConfigurationsStore';
 
@@ -24,6 +27,8 @@ interface IDashboardState {
   currentBreakpoint?: string;
   layouts?: ILayouts;
   grid?: any;
+  askConfig?:boolean;
+  
 }
 
 interface IDashboardProps {
@@ -31,6 +36,8 @@ interface IDashboardProps {
 }
 
 export default class Dashboard extends React.Component<IDashboardProps, IDashboardState> {
+ 
+ 
 
   layouts = {};
   
@@ -40,7 +47,8 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     currentBreakpoint: 'lg',
     mounted: false,
     layouts: { },
-    grid: null
+    grid: null,
+    askConfig: false
   };
 
   constructor(props: IDashboardProps) {
@@ -48,7 +56,7 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
 
     this.onBreakpointChange = this.onBreakpointChange.bind(this);
     this.onLayoutChange = this.onLayoutChange.bind(this);
-    this.onEditDashboard = this.onEditDashboard.bind(this);
+    this.onConfigDashboard = this.onConfigDashboard.bind(this);
     this.toggleEditMode = this.toggleEditMode.bind(this);
     this.onDeleteDashboard = this.onDeleteDashboard.bind(this);
     this.onDeleteDashboardApprove = this.onDeleteDashboardApprove.bind(this);
@@ -119,8 +127,10 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
       
   }
 
-  onEditDashboard() {
-    window.location.replace('/dashboard/config');
+  onConfigDashboard() {
+    //window.location.replace('/dashboard/config');
+    //opena dialog lightbox instead
+    this.setState({ askConfig: true });
   }
 
   toggleEditMode() {
@@ -139,10 +149,20 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     this.setState({ askDelete: false });
   }
 
+  
+
+  onConfigDashboardCancel() {
+    this.setState({ askConfig: false });
+  }
+
+  
+
+  
+
   render() {
 
     let { dashboard } = this.props;
-    var { currentBreakpoint, grid, editMode, askDelete } = this.state;
+    var { currentBreakpoint, grid, editMode, askDelete, askConfig } = this.state;
     var layout = this.state.layouts[currentBreakpoint];
 
     if (!grid) {
@@ -160,8 +180,8 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
 
     // Actions to perform on an active dashboard
     let toolbarActions = [
-      <Button key="edit" icon primary={editMode} tooltipLabel="Edit Dashboard" onClick={this.toggleEditMode}>edit</Button>,
-      <Button key="settings" icon tooltipLabel="Connections" onClick={this.onEditDashboard}>settings_applications</Button>
+      <span><Button key="edit" icon primary={editMode} tooltipLabel="Edit Dashboard" onClick={this.toggleEditMode}>edit</Button></span>,
+       <SettingsButton/>
     ];
 
     if (editMode) {
@@ -169,6 +189,9 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
         <Button key="delete" icon tooltipLabel="Delete dashboard" onClick={this.onDeleteDashboard}>delete</Button>
       );
     }
+    
+    
+    
 
     return (
       <div style={{ width: '100%' }}>
@@ -212,6 +235,8 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
             Are you sure you want to permanently delete this dashboard?
           </p>
         </Dialog>
+        
+
       </div>
     );
   }
