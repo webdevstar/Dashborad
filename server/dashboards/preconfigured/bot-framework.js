@@ -31,101 +31,172 @@ return {
 
         return { queryTimespan, granularity };
       }
-    }, 
+    },
     {
-      id: "conversions",
-      type: "ApplicationInsights/Query",
-      dependencies: { timespan: "timespan", queryTimespan: "timespan:queryTimespan" },
-      params: {
-        query: ` customEvents` +
-            ` | extend successful=customDimensions.successful` +
-            ` | where name startswith 'message.convert'` +
-            ` | summarize event_count=count() by name, tostring(successful)`,
-        mappings: {
-          "successful": (val) => val === 'true',
-          "event_count": (val) => val || 0
-        }
-      },
-      calculated: (state) => {
-        var { values } = state;
-
-        var total = _.find(values, { name: 'message.convert.start' });
-        var successful = _.find(values, { name: 'message.convert.end', successful: true }) || { event_count: 0 };
-
-        if (!total) {
-          return null;
-        }
-
-        var displayValues = [
-          { label: 'Successful', count: successful.event_count },
-          { label: 'Failed', count: total.event_count - successful.event_count + 5 },
-        ];
-
-        return { displayValues };
-      }
-    }, 
-    {
-      id: "timeline",
+			id: 'ai',
       type: "ApplicationInsights/Query",
       dependencies: { timespan: "timespan", queryTimespan: "timespan:queryTimespan", granularity: "timespan:granularity" },
-      params: {
-        query: (dependencies) => {
-          var { granularity } = dependencies;
-          return ` customEvents` +
-            ` | where name == 'Activity'` +
-            ` | summarize count=count() by bin(timestamp, ${granularity}), name, channel=tostring(customDimensions.channel)` +
-            ` | order by timestamp asc `
-        },
-        mappings: {
-          "channel": (val) => val || "unknown",
-          "count": (val) => val || 0,
-        }
+			params: {
+				table: "customEvents",
+				queries: {
+					conversions: {
+						query: () => `` +
+								` extend successful=customDimensions.successful | ` +
+								` where name startswith 'message.convert' | ` +
+								` summarize event_count=count() by name, tostring(successful)`,
+						mappings: {
+							"successful": (val) => val === 'true',
+							"event_count": (val) => val || 0
+						}
+					},
+					timeline: {
+						query: (dependencies) => {
+							var { granularity } = dependencies;
+							return `` +
+								` where name == 'Activity' | ` +
+								` summarize count=count() by bin(timestamp, ${granularity}), name, channel=tostring(customDimensions.channel) | ` +
+								` order by timestamp asc `
+						},
+						mappings: {
+							"channel": (val) => val || "unknown",
+							"count": (val) => val || 0,
+						}
+					},
+          intents: {
+            query: () => `` +
+              ` extend cslen = customDimensions.callstack_length, intent=customDimensions.intent | ` +
+              ` where name startswith "message.intent" and (cslen == 0 or strlen(cslen) == 0) and strlen(intent) > 0 | ` +
+              ` summarize count=count() by tostring(intent)`,
+            mappings: {
+              "intent": (val) => val || "Unknown",
+              "count": (val) => val || 0,
+            }
+          },
+          users: {
+            query: `summarize totalUsers=count() by user_Id`
+          },
+          channelActivity: {
+            query: () => `` + 
+                    ` where name == 'Activity' | ` + 
+                    ` extend channel=customDimensions.channel | ` + 
+                    ` extend hourOfDay=floor(timestamp % 1d, 1h) / 1hr | ` + 
+                    ` extend duration=tolong(customMeasurements.duration/1000) | ` + 
+                    ` summarize count=count() by tolong(duration), tostring(channel), hourOfDay | ` + 
+                    ` order by hourOfDay asc`,
+            mappings: {
+              duration: (val) => val || 0,
+              channel: (val) => val || 'unknown'
+            }
+          }
+				}
       },
-      calculated: (state) => {
-        var _timeline = {};
-        var _channels = {};
-        var values = state.values || [];
-        var timespan = state.timespan;
+			calculated: [
+				
+        // Conversions Extraction
+        (state) => {
 
-        values.forEach(row => {
-          var { channel, timestamp, count } = row;
-          var timeValue = (new Date(timestamp)).getTime();
+					// Conversion Handling
+					// ===================
+					var { conversions } = state;
 
-          if (!_timeline[timeValue]) _timeline[timeValue] = {
-            time: (new Date(timestamp)).toUTCString()
+					var total = _.find(conversions, { name: 'message.convert.start' });
+					var successful = _.find(conversions, { name: 'message.convert.end', successful: true }) || { event_count: 0 };
+
+					if (!total) {
+						return null;
+					}
+
+					var displayValues = [
+						{ label: 'Successful', count: successful.event_count },
+						{ label: 'Failed', count: total.event_count - successful.event_count + 5 },
+					];
+
+					return {
+						"conversions-displayValues": displayValues
+					};
+				},
+				
+        // Timeline Activity Extraction
+        (state) => {
+
+					// Timeline handling
+					// =================
+
+					var { timeline } = state;
+					var _timeline = {};
+					var _channels = {};
+					var timeline = state.timeline || [];
+					var timespan = state.timespan;
+
+					timeline.forEach(row => {
+						var { channel, timestamp, count } = row;
+						var timeValue = (new Date(timestamp)).getTime();
+
+						if (!_timeline[timeValue]) _timeline[timeValue] = {
+							time: (new Date(timestamp)).toUTCString()
+						};
+						if (!_channels[channel]) _channels[channel] = {
+							name: channel,
+							value: 0
+						};
+
+						_timeline[timeValue][channel] = count;
+						_channels[channel].value += count;
+					});
+
+					var channels = Object.keys(_channels);
+					var channelUsage = _.values(_channels);
+					var timelineValues = _.map(_timeline, value => {
+						channels.forEach(channel => {
+							if (!value[channel]) value[channel] = 0;
+						});
+						return value;
+					});
+
+					return {
+						"timeline-graphData": timelineValues,
+						"timeline-channelUsage": channelUsage,
+						"timeline-timeFormat": (timespan === "24 hours" ? 'hour' : 'date'),
+						"timeline-channels": channels
+					};
+				},
+
+        // Intents Extraction
+        (state) => {
+          return {
+            "intents-bars": [ 'count' ]
           };
-          if (!_channels[channel]) _channels[channel] = {
-            name: channel,
-            value: 0
+        },
+
+        // Users Extraction
+        (state) => {
+          var { users } = state;
+          let result = 0;
+          if (users.length === 1 && users[0].totalUsers > 0) {
+            result = users[0].totalUsers;
+          }
+          return {
+            "users-value": result,
+            "users-icon": 'account_circle'
           };
+        },
 
-          _timeline[timeValue][channel] = count;
-          _channels[channel].value += count;
-        });
-
-        var channels = Object.keys(_channels);
-        var channelUsage = _.values(_channels);
-        var timeline = _.map(_timeline, value => {
-          channels.forEach(channel => {
-            if (!value[channel]) value[channel] = 0;
-          });
-          return value;
-        });
-
-        return {
-          graphData: timeline,
-          channelUsage,
-          channels,
-          timeFormat: (timespan === "24 hours" ? 'hour' : 'date')
-        };
-      }
-    }, 
+        // Channel Activity Extraction
+        (state) => {
+          var { channelActivity } = state;
+          var groupedValues = _.chain(channelActivity).groupBy('channel').value();
+          return {
+            "channelActivity-groupedValues": groupedValues
+          };
+        }
+			]
+		},
     {
       id: "errors",
       type: "ApplicationInsights/Query",
       dependencies: { timespan: "timespan", queryTimespan: "timespan:queryTimespan" },
       params: {
-        query: ` exceptions` +
+        query: () => ` exceptions` +
             ` | summarize count_error=count() by handledAt, innermostMessage` +
             ` | order by count_error desc `,
         mappings: {
@@ -154,76 +225,9 @@ return {
           errors,
           handlers: _.values(handlers),
           handledAtTotal,
-          handledAtTotal_icon: handledAtTotal > 0 ? 'bug_report' : 'done',
-          handledAtTotal_class: handledAtTotal > 0 ? 'dash-error' : 'dash-success',
+          handledAtTotal_color: handledAtTotal > 0 ? '#D50000' : '#AEEA00',
+					handledAtTotal_icon: handledAtTotal > 0 ? 'bug_report' : 'done',
           handledAtUncaught
-        };
-      }
-    }, 
-    {
-      id: "intents",
-      type: "ApplicationInsights/Query",
-      dependencies: { timespan: "timespan", queryTimespan: "timespan:queryTimespan" },
-      params: {
-        query: ` customEvents` +
-          ` | extend cslen = customDimensions.callstack_length, intent=customDimensions.intent` +
-          ` | where name startswith "message.intent" and (cslen == 0 or strlen(cslen) == 0) and strlen(intent) > 0` +
-          ` | summarize count=count() by tostring(intent)`,
-        mappings: {
-          "intent": (val) => val || "Unknown",
-          "count": (val) => val || 0,
-        }
-      },
-      calculated: (state) => {
-        return {
-          bars: [ 'count' ]
-        };
-      }
-    },
-    {
-      id: 'users',
-      type: 'ApplicationInsights/Query',
-      dependencies: { timespan: 'timespan', queryTimespan: 'timespan:queryTimespan' },
-      params: {
-        query: ` customEvents` + 
-                ` | summarize totalUsers=count() by user_Id`,
-      },
-      calculated: (state) => {
-        var { values } = state;
-        let result = 0;
-        if (values.length === 1 && values[0].totalUsers > 0) {
-          result = values[0].totalUsers;
-        }
-        return {
-          value: result,
-          icon: 'account_circle'
-        };
-      }
-    },
-    {
-      id: 'channelActivity',
-      type: 'ApplicationInsights/Query',
-      dependencies: { timespan: 'timespan', queryTimespan: 'timespan:queryTimespan' },
-      params: {
-        query: ` customEvents` + 
-                ` | where name == 'Activity'` + 
-                ` | extend channel=customDimensions.channel` + 
-                ` | extend hourOfDay=floor(timestamp % 1d, 1h) / 1hr` + 
-                ` | extend duration=tolong(customMeasurements.duration/1000) ` + 
-                ` | summarize count=count() by tolong(duration), tostring(channel), hourOfDay` + 
-                ` | order by hourOfDay asc`,
-        mappings: [
-          { key: 'duration', def: 0 },
-          { key: 'channel', def: 'unknown' },
-          { key: 'hourOfDay', def: 0 },
-          { key: 'count', def: 0 }
-        ]
-      },
-      calculated: (state) => {
-        var { values } = state;
-        var groupedValues = _.chain(values).groupBy('channel').value();
-        return {
-          groupedValues: groupedValues
         };
       }
     }
@@ -243,7 +247,7 @@ return {
       title: "Message Rate",
       subtitle: "How many messages were sent per timeframe",
       size: { w: 5, h: 8 },
-      dependencies: { values: "timeline:graphData", lines: "timeline:channels", timeFormat: "timeline:timeFormat" }
+      dependencies: { values: "ai:timeline-graphData", lines: "ai:timeline-channels", timeFormat: "ai:timeline-timeFormat" }
     }, 
     {
       id: "channels",
@@ -251,43 +255,48 @@ return {
       title: "Channel Usage",
       subtitle: "Total messages sent per channel",
       size: { w: 3, h: 8 },
-      dependencies: { values: "timeline:channelUsage" },
+      dependencies: { values: "ai:timeline-channelUsage" },
       props: { 
         showLegend: false 
       }
     }, 
     {
-      id: "errors",
-      type: "Scorecard",
-      title: "Errors",
-      size: { w: 2, h: 2},
-      dependencies: { value: "errors:handledAtTotal", icon: "errors:handledAtTotal_icon", className: "errors:handledAtTotal_class" },
-      actions: {
-        onCardClick: {
-          action: "dialog:errors",
-          params: {
-            title: "args:title",
-            type: "args:type",
-            innermostMessage: "args:innermostMessage",
-            queryspan: "timespan:queryTimespan"
-          }
-        }
-      }
-    },
-    {
-      id: 'totalUsers',
-      type: 'Scorecard',
-      title: "Total Users",
-      size: { w: 2, h: 3},
-      dependencies: { value: 'users:value', icon: 'users:icon'},
-    },
+			id: "scores",
+			type: "Scorecard",
+			size: { w: 2, h: 3 },
+			dependencies: {
+				card_errors_value: "errors:handledAtTotal",
+				card_errors_heading: "::Errors",
+				card_errors_color: "errors:handledAtTotal_color",
+				card_errors_icon: "errors:handledAtTotal_icon",
+				card_errors_subvalue: "errors:handledAtTotal",
+				card_errors_subheading: "::Avg",
+				card_errors_className: "errors:handledAtTotal_class",
+				card_errors_onClick: "::onErrorsClick",
+
+				card_users_value: "ai:users-value",
+				card_users_heading: "::Total Users",
+				card_users_icon: "ai:users-icon"
+			},
+			actions: {
+				onErrorsClick: {
+					action: "dialog:errors",
+					params: {
+						title: "args:heading",
+						type: "args:type",
+						innermostMessage: "args:innermostMessage",
+						queryspan: "timespan:queryTimespan"
+					}
+				}
+			}
+		},
     {
       id: "intents",
       type: "BarData",
       title: "Intents Graph",
       subtitle: "Intents usage per time",      
       size: { w: 4, h: 8 },
-      dependencies: { values: "intents", bars: "intents:bars" },
+      dependencies: { values: "ai:intents", bars: "ai:intents-bars" },
       props: {
         nameKey: "intent"
       },
@@ -301,14 +310,14 @@ return {
           }
         }
       }
-    }, 
+    },
     {
       id: "conversions",
       type: "PieData",
       title: "Conversion Rate",
       subtitle: "Total conversion rate",
       size: { w: 4, h: 8 },
-      dependencies: { values: "conversions:displayValues" },
+      dependencies: { values: "ai:conversions-displayValues" },
       props: {
         pieProps: { nameKey: "label", valueKey: "count" }
       }
@@ -319,7 +328,7 @@ return {
       title: "Message Rate",
       subtitle: "How many messages were sent per timeframe",
       size: { w: 4, h: 8 },
-      dependencies: { values: "timeline:graphData", lines: "timeline:channels", timeFormat: "timeline:timeFormat" },
+      dependencies: { values: "ai:timeline-graphData", lines: "ai:timeline-channels", timeFormat: "ai:timeline-timeFormat" },
       props: {
         isStacked: true,
         showLegend: false
@@ -331,7 +340,7 @@ return {
       title: 'Channel Activity',
       subtitle: 'Monitor channel activity across time of day',
       size: { w: 4, h: 8 },
-      dependencies: { groupedValues:'channelActivity:groupedValues' },
+      dependencies: { groupedValues:'ai:channelActivity-groupedValues' },
       props: {
         xDataKey: "hourOfDay",
         yDataKey: "duration",
@@ -441,10 +450,10 @@ return {
     },
     {
       id: "errors",
-      width: "70%",
+      width: "90%",
       params: ["title", "queryspan"],
       dataSources: [{
-        id: "errors-data",
+        id: "errors-group",
         type: "ApplicationInsights/Query",
         dependencies: {
           queryTimespan: "dialog_errors:queryspan"
@@ -454,58 +463,21 @@ return {
             ` | summarize errors=count() by type, innermostMessage` +
             ` | project type, innermostMessage, errors` +
             ` | order by errors desc `
+        },
+        calculated: (state) => {
+          const { values } = state;
+          return {
+            groups: values
+          };
         }
-      }],
-      elements: [{
-        id: "errors-list",
-        type: "Table",
-        title: "Errors",
-        size: {
-          w: 12,
-          h: 16
-        },
-        dependencies: {
-          values: "errors-data"
-        },
-        props: {
-          cols: [{
-            header: "Type",
-            field: "type"
-          }, {
-            header: "Message",
-            field: "innermostMessage"
-          }, {
-            header: "Count",
-            field: "errors"
-          }, {
-            type: "button",
-            value: "more",
-            onClick: "openErrorType"
-          }]
-        },
-        actions: {
-          openErrorType: {
-            action: "dialog:errortypes",
-            params: {
-              title: "args:type",
-              type: "args:type",
-              innermostMessage: "args:innermostMessage",
-              queryspan: "timespan:queryTimespan"
-            }
-          }
-        }
-      }]
-    }, {
-      id: "errortypes",
-      width: "90%",
-      params: ["title", "type", "handledAt", "innermostMessage", "queryspan"],
-      dataSources: [{
-        id: "errortypes-data",
+      },
+      {
+        id: "errors-selection",
         type: "ApplicationInsights/Query",
         dependencies: {
-          type: "dialog_errortypes:type",
-          innermostMessage: "dialog_errortypes:innermostMessage",
-          queryTimespan: "dialog_errortypes:queryspan"
+          queryTimespan: "dialog_errors:queryspan",
+          type: "args:type",
+          innermostMessage: "args:innermostMessage"
         },
         params: {
           query: ({ type, innermostMessage }) => ` exceptions` +
@@ -516,15 +488,16 @@ return {
         }
       }],
       elements: [{
-        id: "errortypes-list",
-        type: "Table",
-        title: "Error types",
+        id: "errors-list",
+        type: "SplitPanel",
+        title: "Errors",
         size: {
           w: 12,
           h: 16
         },
         dependencies: {
-          values: "errortypes-data"
+          groups: "errors-group",
+          values: "errors-selection",
         },
         props: {
           cols: [{
@@ -534,21 +507,32 @@ return {
             header: "Message",
             field: "innermostMessage"
           }, {
-            header: "Handle",
-            field: "handledAt"
+            header: "HandledAt",
+            field: "innermostMessage"
           }, {
-            header: "Conversation ID",
+            header: "Conversation Id",
             field: "conversationId"
           }, {
-            header: "Opereration ID",
+            header: "Operation Id",
             field: "operation_Id"
           }, {
             type: "button",
             value: "more",
             onClick: "openErrorDetail"
-          }]
+          }],
+          fieldTitle: "type",
+          fieldCount: "errors",
         },
         actions: {
+          select: {
+            action: "errors-selection:updateDependencies",
+            params: {
+              title: "args:type",
+              type: "args:type",
+              innermostMessage: "args:innermostMessage",
+              queryspan: "timespan:queryTimespan"
+            }
+          },
           openErrorDetail: {
             action: "dialog:errordetail",
             params: {
@@ -563,7 +547,8 @@ return {
           }
         }
       }]
-    }, {
+    },
+    {
       id: "errordetail",
       width: "50%",
       params: ["title", "handledAt", "type", "operation_Id", "queryspan"],

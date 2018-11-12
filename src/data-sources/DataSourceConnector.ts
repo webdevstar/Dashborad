@@ -109,7 +109,15 @@ export class DataSourceConnector {
     Object.keys(dependencies).forEach(key => {
       
       // Find relevant store
-      let dependsUpon = dependencies[key].split(':');
+      let dependency = dependencies[key] || '';
+
+      // Checking if this is a constant value
+      if (dependency.startsWith('::')) {
+        result.dependencies[key] = dependency.substr(2);
+        return;
+      }
+
+      let dependsUpon = dependency.split(':');
       let dataSourceName = dependsUpon[0];
 
       if (dataSourceName === 'args' && args) {
@@ -123,7 +131,7 @@ export class DataSourceConnector {
       } else {
         let dataSource = DataSourceConnector.dataSources[dataSourceName];
         if (!dataSource) {
-          throw new Error('Could not find data source for depedency ' + dependencies[key]);
+          throw new Error('Could not find data source for depedency ' + dependency + '. If your want to use a constant value, write "value:some value"');
         }
 
         let valueName = dependsUpon.length > 1 ? dependsUpon[1] : dataSource.plugin.defaultProperty;
@@ -148,7 +156,7 @@ export class DataSourceConnector {
     var actionName = actionLocation[1];
 
     if (dataSourceName === 'dialog') {
-
+      
       var extrapolation = DataSourceConnector.extrapolateDependencies(params, args);
 
       DialogsActions.openDialog(actionName, extrapolation.dependencies);
@@ -182,9 +190,13 @@ export class DataSourceConnector {
 
         // This method will be called with an action is dispatched
         NewActionClass.prototype[action] = function (...args) {
-
           // Collecting depedencies from all relevant stores
-          var extrapolation = DataSourceConnector.extrapolateDependencies(plugin.getDependencies());
+          var extrapolation;
+          if (args.length === 1) {
+            extrapolation = DataSourceConnector.extrapolateDependencies(plugin.getDependencies(), args[0]);
+          } else {
+            extrapolation = DataSourceConnector.extrapolateDependencies(plugin.getDependencies());
+          }
 
           // Calling action with arguments
           var result = plugin[action].call(this, extrapolation.dependencies, ...args) || {};
@@ -257,6 +269,15 @@ export class DataSourceConnector {
       var additionalValues = calculated(state) || {};
       Object.keys(additionalValues).forEach(key => {
         result[key] = additionalValues[key];
+      });
+    }
+
+    if (Array.isArray(calculated)) {
+      calculated.forEach(calc => {
+        var additionalValues = calc(state) || {};
+        Object.keys(additionalValues).forEach(key => {
+          result[key] = additionalValues[key];
+        });
       });
     }
 
