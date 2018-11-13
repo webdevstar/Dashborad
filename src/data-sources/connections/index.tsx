@@ -1,10 +1,9 @@
 import * as React from 'react';
 
 import ApplicationInsightsConnection from './application-insights';
-import AzureConnection from './azure';
 import { IConnection } from './Connection';
 
-var connectionTypes = [ ApplicationInsightsConnection, AzureConnection ];
+var connectionTypes = [ ApplicationInsightsConnection ];
 
 var connections: IDict<IConnection> = {};
 connectionTypes.forEach(connectionType => {

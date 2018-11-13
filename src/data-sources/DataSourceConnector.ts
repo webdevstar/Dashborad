@@ -246,12 +246,12 @@ export class DataSourceConnector {
             return (dispatch) => {
               result(function (obj: any) {
                 obj = obj || {};
-                var fullResult = DataSourceConnector.callibrateResult(obj, plugin, extrapolation.dependencies);
+                var fullResult = DataSourceConnector.callibrateResult(obj, plugin);
                 dispatch(fullResult);
               });
             };
           } else {
-            var fullResult = DataSourceConnector.callibrateResult(result, plugin, extrapolation.dependencies);
+            var fullResult = DataSourceConnector.callibrateResult(result, plugin);
             return fullResult;
           }
         };
@@ -287,7 +287,7 @@ export class DataSourceConnector {
     return StoreClass;
   }
 
-  private static callibrateResult(result: any, plugin: IDataSourcePlugin, dependencies: IDictionary): any {
+  private static callibrateResult(result: any, plugin: IDataSourcePlugin): any {
 
     var defaultProperty = plugin.defaultProperty || 'value';
 
@@ -305,7 +305,7 @@ export class DataSourceConnector {
     state = _.extend(state, result);
 
     if (typeof calculated === 'function') {
-      var additionalValues = calculated(state, dependencies) || {};
+      var additionalValues = calculated(state) || {};
       Object.keys(additionalValues).forEach(key => {
         result[key] = additionalValues[key];
       });
@@ -313,7 +313,7 @@ export class DataSourceConnector {
 
     if (Array.isArray(calculated)) {
       calculated.forEach(calc => {
-        var additionalValues = calc(state, dependencies) || {};
+        var additionalValues = calc(state) || {};
         Object.keys(additionalValues).forEach(key => {
           result[key] = additionalValues[key];
         });

@@ -9,6 +9,7 @@ class App extends React.Component<any, any> {
     var { children } = this.props;
 
     return (
+      // <Navbar history={this.props.history}>
       <div>
         <Navbar>
           {children}

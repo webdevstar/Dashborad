@@ -144,37 +144,25 @@ class ConfigurationsActions extends AbstractActions implements IConfigurationsAc
 
         // Iterating through all values in object
         let objectValue = '';
-        let objectValues = [];
-        let valuesStringLength = 0;
         Object.keys(obj).forEach((key: string, idx: number) => {
+
+          if (idx > 0) { objectValue += ',\n'; }
 
           let value = this.objectToString(obj[key], indent + 1, true);
 
           // if key contains '.' or '-'
           let skey = key.search(/\.|\-/g) >= 0 ? `"${key}"` : `${key}`;
-          let mapping = `${skey}: ${value}`;
-          valuesStringLength += mapping.length;
 
-          objectValues.push(mapping);
+          objectValue += `${sind}\t${skey}: ${value}`;
         });
 
-        if (valuesStringLength <= 120) {
-          result += `{ ${objectValues.join()} }`;
-        } else {
-          result += `{\n${sind}\t${objectValues.join(',\n' + sind + '\t')}\n${sind}}`;          
-        }
-
+        result += `{\n${objectValue}\n${sind}}`;
         break;
       }
 
       case 'string':
-        let stringValue = obj.toString();
-        if ( stringValue.startsWith('<') && stringValue.endsWith('>') ) {
-          result += '`' + stringValue + '`'; // html needs to be wrapped in back ticks
-        } else {
-          stringValue = stringValue.replace(/\"/g, '\\"');
-          result += `"${stringValue}"`;
-        }
+        let stringValue = obj.toString().replace(/\"/g, '\\"');
+        result += `"${stringValue}"`;
         break;
 
       case 'function': {
@@ -189,19 +177,13 @@ class ConfigurationsActions extends AbstractActions implements IConfigurationsAc
       }
 
       case 'array': {
-        let arrayStringLength = 0;
-        let mappedValues = (obj as any[]).map(value => {
-          let res = this.objectToString(value, indent + 1, true);
-          arrayStringLength += res.length;
-          return res;
+        let arrayValue = '';
+        (obj as any[]).forEach((value: any, idx: number) => {
+          arrayValue += idx > 0 ? ',' : '';
+          arrayValue += this.objectToString(value, indent + 1, true);
         });
-
-        if (arrayStringLength <= 120) {
-          result += `[${mappedValues.join()}]`;
-        } else {
-          result += `[\n${sind}\t${mappedValues.join(',\n' + sind + '\t')}\n${sind}]`;          
-        }
         
+        result += `[${arrayValue}]`;
         break;
       }
 

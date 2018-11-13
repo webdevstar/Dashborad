@@ -13,8 +13,6 @@ import Table from '../Table';
 import { ITableProps, ITableState } from '../Table/Table';
 import Avatar from 'react-md/lib/Avatars';
 
-import utils from '../../../utils';
-
 const style = {
   lhs: {
     position: 'fixed',
@@ -32,23 +30,22 @@ const style = {
 
 export interface ISplitViewProps extends ITableProps {
   props: {
-    checkboxes?: boolean;
-    rowClassNameField?: string;
-    hideBorders?: boolean;
+    checkboxes?: boolean,
+    rowClassNameField?: string
     cols: {
-      header?: string;
-      field?: string;
-      secondaryHeader?: string;
-      secondaryField?: string;
-      value?: string;
-      width?: string | number;
-      type?: 'text' | 'time' | 'icon' | 'button';
-      click?: string;
-    }[]
+      header?: string,
+      field?: string,
+      secondaryHeader?: string,
+      secondaryField?: string,
+      value?: string,
+      width?: string | number,
+      type?: 'text' | 'time' | 'icon' | 'button',
+      click?: string
+    }[],
     group: {
-      field?: string;
-      secondaryField?: string;
-      countField?: string;
+      field?: string,
+      secondaryField?: string,
+      countField?: string,
     }
   };
 }
@@ -56,9 +53,6 @@ export interface ISplitViewProps extends ITableProps {
 export interface ISplitViewState extends ITableState {
   values: Object[];
   groups: Object[];
-  rowIndex: number;
-  rowsPerPage: number;
-  currentPage: number;
 }
 
 export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplitViewState> {
@@ -67,9 +61,6 @@ export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplit
     groups: [],
     values: [],
     selectedIndex: -1,
-    rowIndex: 0,
-    rowsPerPage: 10,
-    currentPage: 1,
   };
 
   constructor(props: ISplitViewProps) {
@@ -106,7 +97,7 @@ export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplit
       if ( group.secondaryField ) {
         secondaryText = item[group.secondaryField] || '';
       }
-      let badge = item[countField] ? <Avatar>{utils.kmNumber(item[countField])}</Avatar> : null;
+      let badge = item[countField] ? <Avatar>{item[countField]}</Avatar> : null;
       let active = (i === this.state.selectedIndex) ? true : false;
       return (
         <ListItem
@@ -135,7 +126,7 @@ export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplit
 
     return (
       <Card>
-        <div style={style.lhs} className='split-view'>
+        <div style={style.lhs}>
           <List>
             {listItems}
           </List>
@@ -148,11 +139,7 @@ export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplit
     );
   }
 
-  handleClick(group: any, index: number, event?: UIEvent) {
-    if (event) {
-      event.stopPropagation();
-    }
-    
+  handleClick(group: any, index: number) {
     this.setState({ selectedIndex: index, values: [] });
     this.trigger('select', group);
   }
