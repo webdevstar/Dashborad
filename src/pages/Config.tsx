@@ -22,7 +22,7 @@ export default class Config extends React.Component<any, IDashboardState> {
   constructor(props: any) {
     super(props);
 
-    //ConfigurationsActions.loadConfiguration();
+    // ConfigurationsActions.loadConfiguration();
   }
 
   componentDidMount() {
@@ -43,11 +43,7 @@ export default class Config extends React.Component<any, IDashboardState> {
     }
 
     return (
-      <div className="md-grid">
-          <div className="md-cell md-cell--6">
-              <ConfigDashboard dashboard={dashboard} connections={connections} standaloneView={this.props.standaloneView} shouldSave={this.props.shouldSave}  />
-          </div>
-      </div>
+      <ConfigDashboard dashboard={dashboard} connections={connections} />
     );
   }
 }

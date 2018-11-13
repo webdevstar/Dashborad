@@ -5,11 +5,13 @@ import { Card } from 'react-md/lib/Cards';
 import FontIcon from 'react-md/lib/FontIcons';
 import * as _ from 'lodash';
 
+import utils from '../../utils';
+
 const styles = {
   chevron: {
-    float: "none",
+    float: 'none',
     padding: 0,
-    verticalAlign: "middle"
+    verticalAlign: 'middle'
   }
 };
 
@@ -19,7 +21,7 @@ interface IScorecardProps extends IGenericProps {
     colorPosition?: 'bottom' | 'left';
     subheading?: string;
     onClick?: string;
-  }
+  };
 }
 
 export default class Scorecard extends GenericComponent<IScorecardProps, any> {
@@ -31,24 +33,16 @@ export default class Scorecard extends GenericComponent<IScorecardProps, any> {
   }
 
   shortFormatter(num: any): string {
-    if (typeof num !== 'number') { return num; }
+    if (!num && num !== 0) { return ''; }
+    if (isNaN(num)) { return num; }
 
-    return (
-      num > 999999 ?
-        (num / 1000000).toFixed(1) + 'M' :
-        num > 999 ?
-          (num / 1000).toFixed(1) + 'K' : num.toString());
+    return utils.kmNumber(num);
   }
 
   render() {
     let { values, value, icon, subvalue, color, className } = this.state;
     let { title, props, actions } = this.props;
     let { subheading, colorPosition, scorecardWidth, onClick } = props;
-
-    let style = {};
-    if (scorecardWidth) {
-      style['width'] = scorecardWidth;
-    }
 
     if (_.has(this.state, 'values')) {
       // In case the user defined a "values" parameter
@@ -86,55 +80,12 @@ export default class Scorecard extends GenericComponent<IScorecardProps, any> {
       values = Object.keys(dynamicCards).map(key => dynamicCards[key]);
     }
 
-    values = values || [];
-
-    var cards = values.map((value, idx) => {
-      let colorStyle = {};
-      let cardstyle = _.extend({}, style);
-      let color = value.color || '';
-      let icon = value.icon;
-      let iconStyle = icon && { color };
-      let onClick = value.onClick;
-
-      let chevronStyle = _.extend({}, styles.chevron);
-      chevronStyle['color'] = color;
-
-      if (!icon || colorPosition) {
-        if (!colorPosition || colorPosition === 'bottom') { colorStyle['borderColor'] = color; }
-        if (colorPosition === 'left') { cardstyle['borderColor'] = color; }
-      }
-
-      const drillDownLink = onClick ?
-        <div className="md-subheading-2" style={{ color: color }}>{value.heading} <FontIcon style={chevronStyle}>chevron_right</FontIcon></div>
-        : <div className="md-subheading-2">{value.heading}</div>;
-
-      let cardClassName = 'scorecard ' + (onClick ? 'clickable-card ' : '') + (colorPosition ? 'color-' + colorPosition : '');
-      return (
-        <div key={idx} className={cardClassName} style={cardstyle} onClick={this.handleClick.bind(this, value)}>
-          {
-            icon && <FontIcon className={className} style={iconStyle}>{icon}</FontIcon>
-          }
-          <div className="md-headline">{this.shortFormatter(value.value)}</div>
-          {drillDownLink}
-          {
-            (value.subvalue || value.subheading) &&
-            (
-              <div className="scorecard-subheading" style={colorStyle}>
-                {
-                  value.subvalue &&
-                  <b>{this.shortFormatter(value.subvalue)}</b>
-                }
-                {value.subheading}
-              </div>
-            )
-          }
-        </div>
-      )
-    });
+    var cards = (values || []).map((val, idx) =>
+      this.valueToCard(val, idx, className, colorPosition, scorecardWidth));
 
     return (
       <Card>
-        <Media className='md-card-scorecard'>
+        <Media className="md-card-scorecard">
           <div className="md-grid--no-spacing">
             {cards}
           </div>
@@ -143,7 +94,7 @@ export default class Scorecard extends GenericComponent<IScorecardProps, any> {
     );
   }
 
-  handleClick(value, proxy) {
+  handleClick(value: {onClick: string}, proxy: any) {
     if (value && value.onClick && _.isEmpty(this.props.actions)) {
       return;
     }
@@ -152,5 +103,53 @@ export default class Scorecard extends GenericComponent<IScorecardProps, any> {
     var { title } = this.props || '' as any;
     var args = { ...value };
     this.trigger(value.onClick, args);
+  }
+
+  private valueToCard(value: any, idx: number, className: string, colorPosition: string, scorecardWidth: number) {
+    let style = {};
+    if (scorecardWidth) {
+      style['width'] = scorecardWidth;
+    }
+
+    let colorStyle = {};
+    let cardstyle = _.extend({}, style);
+    let color = value.color || '';
+    let icon = value.icon;
+    let iconStyle = icon && { color };
+    let onClick = value.onClick;
+
+    let chevronStyle = _.extend({}, styles.chevron);
+    chevronStyle['color'] = color;
+
+    if (!icon || colorPosition) {
+      if (!colorPosition || colorPosition === 'bottom') { colorStyle['borderColor'] = color; }
+      if (colorPosition === 'left') { cardstyle['borderColor'] = color; }
+    }
+
+    const drillDownLink = onClick ? (
+      <div className="md-subheading-2" style={{ color: color }}>
+        {value.heading}
+        <FontIcon style={chevronStyle}>chevron_right</FontIcon>
+      </div>)
+      : <div className="md-subheading-2">{value.heading}</div>;
+
+    let cardClassName = `scorecard${onClick ? ' clickable-card' : ''}${colorPosition ? ` color-${colorPosition}` : ''}`;
+    return (
+      <div key={idx} className={cardClassName} style={cardstyle} onClick={this.handleClick.bind(this, value)}>
+        {
+          icon && <FontIcon className={className} style={iconStyle}>{icon}</FontIcon>}
+        <div className="md-headline">{this.shortFormatter(value.value)}</div>
+        {drillDownLink}
+        {
+          (value.subvalue || value.subheading) &&
+          (
+            <div className="scorecard-subheading" style={colorStyle}>
+              <b>{this.shortFormatter(value.subvalue)}</b>
+              {value.subheading}
+            </div>
+          )
+        }
+      </div>
+    );
   }
 }

@@ -49,10 +49,26 @@ export default class BarData extends GenericComponent<IBarProps, IBarState> {
       return null;
     }
 
+    if (!values || !values.length) {
+      return (
+        <Card title={title} subtitle={subtitle}>
+          <div style={{ padding: 20 }}>No data is available</div>
+        </Card>
+      );
+    }
+
     var barElements = [];
     if (values && values.length && bars) {
       barElements = bars.map((bar, idx) => {
-        return <Bar key={idx} dataKey={bar} fill={ThemeColors[idx]} onClick={this.handleClick} />;
+        return (
+          <Bar 
+            key={idx} 
+            stackId="1" 
+            dataKey={bar.name || bar} 
+            fill={bar.color || ThemeColors[idx]} 
+            onClick={this.handleClick} 
+          />
+        );
       });
     }
 
