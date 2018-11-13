@@ -15,47 +15,20 @@ import Avatar from 'react-md/lib/Avatars';
 
 const style = {
   lhs: {
-    position: 'fixed',
-    width: '20%',
-    height: 'calc(100vh - 148px)',
-    overflow: 'scroll',
-    borderRight: 'solid 1px #eee',
+    position: "fixed",
+    width: "20%",
+    height: "calc(100vh - 148px)",
+    overflow: "scroll",
+    borderRight: "solid 1px #eee",
   },
   rhs: {
-    float: 'right',
-    width: '80%',
-    minHeight: 'calc(100vh - 148px)',
+    float: "right",
+    width: "80%",
+    minHeight: "calc(100vh - 148px)",
   }
-};
-
-export interface ISplitViewProps extends ITableProps {
-  props: {
-    checkboxes?: boolean,
-    rowClassNameField?: string
-    cols: {
-      header?: string,
-      field?: string,
-      secondaryHeader?: string,
-      secondaryField?: string,
-      value?: string,
-      width?: string | number,
-      type?: 'text' | 'time' | 'icon' | 'button',
-      click?: string
-    }[],
-    group: {
-      field?: string,
-      secondaryField?: string,
-      countField?: string,
-    }
-  };
 }
 
-export interface ISplitViewState extends ITableState {
-  values: Object[];
-  groups: Object[];
-}
-
-export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplitViewState> {
+export default class SplitPanel extends GenericComponent<ITableProps, ITableState> {
 
   state = {
     groups: [],
@@ -63,13 +36,13 @@ export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplit
     selectedIndex: -1,
   };
 
-  constructor(props: ISplitViewProps) {
+  constructor(props: ITableProps) {
     super(props);
 
     this.handleClick = this.handleClick.bind(this);
   }
 
-  componentWillUpdate(nextProps: any, nextState: any) {
+  componentWillUpdate(nextProps, nextState) {
     var { groups } = nextState;
     if (!this.state.groups && groups && groups.length > 0) {
       // automatically select first group list item
@@ -81,48 +54,31 @@ export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplit
 
   render() {
     var { props } = this.props;
-    var { cols, group } = props;
+    var { cols } = props;
     var { groups, values } = this.state;
 
-    var field = group.field || cols[0].field;
-    var countField = group.countField || cols[props.cols.length - 1].field;
+    var fieldTitle = props["fieldTitle"] || props.cols[0].field;
+    var fieldCount = props["fieldCount"] || props.cols[props.cols.length - 1].field;
 
     if (!groups) {
       return <CircularProgress key="loading" id="spinner" />;
     }
 
-    const listItems = groups.map((item, i) => {
-      const primaryText = item[field];
-      let secondaryText = '';
-      if ( group.secondaryField ) {
-        secondaryText = item[group.secondaryField] || '';
-      }
-      let badge = item[countField] ? <Avatar>{item[countField]}</Avatar> : null;
+    const listItems = groups.map((group, i) => {
+      let text = group[fieldTitle];
+      let badge = group[fieldCount] ? <Avatar>{group[fieldCount]}</Avatar> : null;
       let active = (i === this.state.selectedIndex) ? true : false;
-      return (
-        <ListItem
-          key={i}
-          primaryText={primaryText}
-          secondaryText={secondaryText}
-          rightAvatar={badge}
-          onClick={this.handleClick.bind(this, item, i)}
-          active={active}
-        />
-      );
+      return <ListItem key={i} primaryText={text} rightAvatar={badge} onClick={this.handleClick.bind(this, group, i)} active={active} />;
     });
 
     const table = (!values || values.length === 0) ?
-      <CircularProgress key="loading" id="spinner" />
-      : (
-        <Table
-          props={this.props.props}
-          dependencies={this.props.dependencies}
-          actions={this.props.actions || {}}
-          title={this.props.title}
-          subtitle={this.props.subtitle}
-          layout={this.props.layout}
-        />
-      );
+      <CircularProgress key="loading" id="spinner" /> :
+      <Table props={this.props.props}
+        dependencies={this.props.dependencies}
+        actions={this.props.actions || {}}
+        title={this.props.title}
+        subtitle={this.props.subtitle}
+        layout={this.props.layout} />;
 
     return (
       <Card>
@@ -139,8 +95,8 @@ export default class SplitPanel extends GenericComponent<ISplitViewProps, ISplit
     );
   }
 
-  handleClick(group: any, index: number) {
+  handleClick(group, index) {
     this.setState({ selectedIndex: index, values: [] });
-    this.trigger('select', group);
+    this.trigger("select", group);
   }
 }

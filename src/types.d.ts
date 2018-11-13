@@ -6,12 +6,6 @@ type IConnection = IStringDictionary;
 type IConnections = IDict<IConnection>;
 
 interface IDashboardConfig extends IDataSourceContainer, IElementsContainer {
-  id: string,
-  name: string,
-  icon: string,
-  url: string,
-  description?: string,
-  preview?: string,
   config: {
     connections: IConnections,
     layout: {
@@ -44,7 +38,7 @@ interface IDataSource {
   type: string
   dependencies?: { [id: string]: string }
   params?: { [id: string]: any }
-  calculated?: (state, dependencies, prevState) => { [index: string]: any }
+  calculated?: (state, dependencies) => { [index: string]: any }
 }
 
 interface IElement {
@@ -63,9 +57,6 @@ interface IFilter {
   type: string
   dependencies?: { [id: string]: string }
   actions?: { [id: string]: string }
-  title?: string
-  subtitle?: string
-  icon?: string
   first: boolean
 }
 

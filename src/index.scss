@@ -47,10 +47,6 @@ h2, .md-subheading-2 {
 .md-card {
   position: relative;
   height: 100%;
-
-  &.hide-borders {
-    box-shadow: none; 
-  }
 }
 
 .md-card-title {
@@ -179,4 +175,19 @@ h2, .md-subheading-2 {
   .widgets {
     top: -5px;
   }
+}
+
+
+/*================*/
+/* Dialogs with toolbar */
+/*================*/
+
+.dialog-toolbar-no-padding .md-dialog-content--padded{
+  padding: 0px;
+}
+.dialog-toolbar-no-padding footer{
+  position: absolute;
+  bottom:0px;
+  right:0px;
+  width:100%;
 }

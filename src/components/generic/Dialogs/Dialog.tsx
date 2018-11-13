@@ -55,7 +55,7 @@ export default class Dialog extends React.PureComponent<IDialogProps, IDialogSta
     var layouts = ElementConnector.loadLayoutFromDashboard(this.props.dialogData, this.props.dashboard);
     
     this.layouts = layouts;
-    (this.state as any).layouts = {  };
+    (this.state as any).layouts = { lg: layouts['lg'] };
   }
 
   componentDidMount() {
@@ -68,8 +68,8 @@ export default class Dialog extends React.PureComponent<IDialogProps, IDialogSta
     var { dialogId, dialogArgs } = this.state;
     
     if (dialogData.id === dialogId) {
-      let dataSourceId = 'dialog_' + dialogData.id;
-      let dataSource = DataSourceConnector.getDataSource(dataSourceId);
+      let datasourceId = 'dialog_' + dialogData.id;
+      let dataSource = DataSourceConnector.getDataSource(datasourceId);
       dataSource.action.updateDependencies.defer(dialogArgs);
     }
   }
@@ -105,13 +105,7 @@ export default class Dialog extends React.PureComponent<IDialogProps, IDialogSta
     }
 
     var { currentBreakpoint } = this.state;
-    var layout = null;
-    
-    if (!currentBreakpoint || !this.state.layouts[currentBreakpoint]) {
-      layout = this.layouts[currentBreakpoint || 'lg'];
-    } else {
-      layout = this.state.layouts[currentBreakpoint];
-    }
+    var layout = this.state.layouts[currentBreakpoint];
 
     // Creating visual elements
     var elements = ElementConnector.loadElementsFromDashboard(dialogData, layout)
@@ -133,21 +127,17 @@ export default class Dialog extends React.PureComponent<IDialogProps, IDialogSta
         dialogStyle={{ width: dialogData.width || '80%' }}
         contentStyle={{ padding: '0', maxHeight: 'calc(100vh - 148px)' }}
       >
-        <ResponsiveReactGridLayout
+        {/*<ResponsiveReactGridLayout
           { ...grid }
-
-          isDraggable={false}
-          isResizable={false}
-
-          layouts={ this.layouts }
+          layouts={ this.state.layouts }
           onBreakpointChange={this.onBreakpointChange}
           // WidthProvider option
           measureBeforeMount={false}
           // I like to have it animate on mount. If you don't, delete `useCSSTransforms` (it's default `true`)
           // and set `measureBeforeMount={true}`.
-          useCSSTransforms={this.state.mounted}>
+          useCSSTransforms={this.state.mounted}>*/}
           { elements }
-        </ResponsiveReactGridLayout>
+        {/*</ResponsiveReactGridLayout>*/}
       </MDDialog>
     );
   }

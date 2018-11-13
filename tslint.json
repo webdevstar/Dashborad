@@ -21,7 +21,6 @@
         "jsdoc-format": true,
         "jsx-no-lambda": false,
         "jsx-no-multiline-js": false,
-        "jsx-boolean-value": false,
         "label-position": true,
         "max-line-length": [ true, 120 ],
         "member-ordering": [
@@ -43,7 +42,7 @@
             "timeEnd",
             "trace"
         ],
-        "no-consecutive-blank-lines": [true],
+        "no-consecutive-blank-lines": true,
         "no-construct": true,
         "no-debugger": true,
         "no-duplicate-variable": true,
@@ -54,7 +53,7 @@
         "no-switch-case-fall-through": true,
         "no-trailing-whitespace": false,
         "no-unused-expression": true,
-        "no-use-before-declare": false,
+        "no-use-before-declare": true,
         "one-line": [
             true,
             "check-catch",
@@ -67,7 +66,7 @@
         "semicolon": [true, "always"],
         "switch-default": true,
 
-        "trailing-comma": [false],
+        "trailing-comma": false,
 
         "triple-equals": [ true, "allow-null-check" ],
         "typedef": [

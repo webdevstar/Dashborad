@@ -1,8 +1,4 @@
 return {
-  id: 'bot_health_dashboard',
-  name: 'Bot Health Dashboard',
-  description: 'Microsoft Bot Framework based health',
-  preview: '/images/bot-framework-preview.png',
   config: {
     connections: { },
     layout: {

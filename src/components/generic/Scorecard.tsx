@@ -5,14 +5,6 @@ import { Card } from 'react-md/lib/Cards';
 import FontIcon from 'react-md/lib/FontIcons';
 import * as _ from 'lodash';
 
-const styles = {
-  chevron: {
-    float: "none",
-    padding: 0,
-    verticalAlign: "middle"
-  }
-};
-
 interface IScorecardProps extends IGenericProps {
   props: {
     scorecardWidth?: number;
@@ -34,10 +26,10 @@ export default class Scorecard extends GenericComponent<IScorecardProps, any> {
     if (typeof num !== 'number') { return num; }
 
     return (
-      num > 999999 ?
-        (num / 1000000).toFixed(1) + 'M' :
-        num > 999 ?
-          (num / 1000).toFixed(1) + 'K' : num.toString());
+      num > 999999 ? 
+        (num/1000000).toFixed(1) + 'M' :
+      num > 999 ? 
+        (num/1000).toFixed(1) + 'K' : num.toString());
   }
 
   render() {
@@ -93,29 +85,23 @@ export default class Scorecard extends GenericComponent<IScorecardProps, any> {
       let cardstyle = _.extend({}, style);
       let color = value.color || '';
       let icon = value.icon;
-      let iconStyle = icon && { color };
+      let iconStyle = icon && {color};
       let onClick = value.onClick;
-
-      let chevronStyle = _.extend({}, styles.chevron);
-      chevronStyle['color'] = color;
 
       if (!icon || colorPosition) {
         if (!colorPosition || colorPosition === 'bottom') { colorStyle['borderColor'] = color; }
         if (colorPosition === 'left') { cardstyle['borderColor'] = color; }
       }
 
-      const drillDownLink = onClick ?
-        <div className="md-subheading-2" style={{ color: color }}>{value.heading} <FontIcon style={chevronStyle}>chevron_right</FontIcon></div>
-        : <div className="md-subheading-2">{value.heading}</div>;
-
       let cardClassName = 'scorecard ' + (onClick ? 'clickable-card ' : '') + (colorPosition ? 'color-' + colorPosition : '');
+
       return (
         <div key={idx} className={cardClassName} style={cardstyle} onClick={this.handleClick.bind(this, value)}>
           {
             icon && <FontIcon className={className} style={iconStyle}>{icon}</FontIcon>
           }
           <div className="md-headline">{this.shortFormatter(value.value)}</div>
-          {drillDownLink}
+          <div className="md-subheading-2">{value.heading}</div>
           {
             (value.subvalue || value.subheading) &&
             (

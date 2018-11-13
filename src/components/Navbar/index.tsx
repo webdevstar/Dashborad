@@ -12,8 +12,6 @@ import Chip from 'react-md/lib/Chips';
 import AccountStore from '../../stores/AccountStore';
 import AccountActions from '../../actions/AccountActions';
 
-import ConfigurationsStore from '../../stores/ConfigurationsStore';
-
 import './style.css';
 
 const avatarSrc = 'https://cloud.githubusercontent.com/assets/13041/19686250/971bf7f8-9ac0-11e6-975c-188defd82df1.png';
@@ -49,16 +47,9 @@ export default class Navbar extends React.Component<any, any> {
       this.setState(state);
     });
     AccountActions.updateAccount();
-
-    ConfigurationsStore.listen((state) => {
-      this.setState({
-        dashboards: state.dashboards
-      });
-    });
   }
 
   render() {
-    let { dashboards } = this.state;
     let { children, title } = this.props;
     let pathname = '/';
     try { pathname = window.location.pathname; } catch (e) { }
@@ -81,14 +72,25 @@ export default class Navbar extends React.Component<any, any> {
           component={Link}
           href="/about"
           active={pathname === '/about'}
-          leftIcon={<FontIcon>help_outline</FontIcon>}
+          leftIcon={<FontIcon>info</FontIcon>}
           tileClassName="md-list-tile--mini"
-          primaryText={'Help'}
+          primaryText={'About'}
         />
       ),
       (
         <ListItem
           key="2"
+          component={Link}
+          href="/dashboard"
+          active={pathname === '/dashboard'}
+          leftIcon={<FontIcon>dashboard</FontIcon>}
+          tileClassName="md-list-tile--mini"
+          primaryText={'Dashboard'}
+        />
+      ),
+      (
+        <ListItem
+          key="3"
           component={Link}
           href="/setup"
           active={pathname === '/setup'}
@@ -98,30 +100,6 @@ export default class Navbar extends React.Component<any, any> {
         />
       )
     ];
-
-    (dashboards || []).forEach((dashboard, index) => {
-      let name = dashboard.name || null;
-      let url = '/dashboard/' + (dashboard.url || index.toString());
-      let active = pathname === url;
-      if (!title && active && name) {
-        title = name;
-      }
-
-      navigationItems.push(
-        (
-          <ListItem
-            key={index + 4}
-            component={Link}
-            href={url}
-            active={active}
-            leftIcon={<FontIcon>{dashboard.icon || 'dashboard'}</FontIcon>}
-            tileClassName="md-list-tile--mini"
-            primaryText={name || 'Dashboard'}
-          />
-        )
-      )
-    });
-    
 
     let toolbarActions = 
         this.state.account ?
@@ -135,7 +113,7 @@ export default class Navbar extends React.Component<any, any> {
           break;
 
         case '/about':
-          title = 'Help';
+          title = 'About';
           break;
 
         case '/dashboard':
@@ -151,7 +129,6 @@ export default class Navbar extends React.Component<any, any> {
           break;
 
         default:
-
           title = 'Ibex Dashboard';
           break;
       }
