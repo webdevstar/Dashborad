@@ -23,16 +23,21 @@ export default class Dashboard extends React.Component<any, IDashboardState> {
   constructor(props: any) {
     super(props);
 
-   // ConfigurationsActions.loadConfiguration();
+    this.updateConfiguration = this.updateConfiguration.bind(this);
+  }
+
+  updateConfiguration(newState: IDashboardState) {
+    this.setState(newState);
   }
 
   componentDidMount() {
 
     this.setState(ConfigurationsStore.getState());
+    ConfigurationsStore.listen(this.updateConfiguration);
+  }
 
-    ConfigurationsStore.listen(state => {
-      this.setState(ConfigurationsStore.getState());
-    });
+  componentWillUnmount() {
+    ConfigurationsStore.unlisten(this.updateConfiguration);
   }
 
   render() {
@@ -45,7 +50,7 @@ export default class Dashboard extends React.Component<any, IDashboardState> {
 
     if (connectionsMissing) {
       return (
-        <ConfigDashboard dashboard={dashboard} connections={connections} standaloneView={true} shouldSave={true} />
+        <ConfigDashboard dashboard={dashboard} connections={connections} />
       );
     }
 

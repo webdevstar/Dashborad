@@ -126,6 +126,18 @@ h2, .md-subheading-2 {
 
 .md-data-table {
 
+  &.table-compact {
+    .md-table-column--header {
+      height: 47px;
+    }
+    .md-table-column {
+      vertical-align: middle;
+      padding-top: 7px;
+      padding-bottom: 7px;
+      height: 51px;
+    }
+  }
+
   .md-table-row {
       .md-btn--icon {
         color: $md-secondary-color;
@@ -162,6 +174,12 @@ h2, .md-subheading-2 {
   }
 }
 
+.split-view {
+  .md-avatar-content {
+    font-size: 14px;
+  }
+}
+
 /*================*/
 /* Minimal Design */
 /*================*/
@@ -172,26 +190,11 @@ h2, .md-subheading-2 {
   } 
 
   .md-media {
-    padding: 39px 0 0 0;
-    margin-top: -39px;
+    padding: 46px 0 0 0;
+    margin-top: -46px;
   }
 
   .widgets {
     top: -5px;
   }
-}
-
-
-/*================*/
-/* Dialogs with toolbar */
-/*================*/
-
-.dialog-toolbar-no-padding .md-dialog-content--padded{
-  padding: 0px;
-}
-.dialog-toolbar-no-padding footer{
-  position: absolute;
-  bottom:0px;
-  right:0px;
-  width:100%;
 }
