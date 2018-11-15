@@ -12,20 +12,14 @@ import connections from '../../data-sources/connections';
 import ConnectionsStore from '../../stores/ConnectionsStore';
 import ConnectionsActions from '../../actions/ConnectionsActions';
 
-
-import SettingsStore from '../../stores/SettingsStore';
-import SettingsActions from '../../actions/SettingsActions';
-
 interface IConfigDashboardState {
   connections: IDictionary;
   error: string;
-  
 }
 
 interface IConfigDashboardProps {
+  dashboard: IDashboardConfig;
   connections: IDictionary;
-  standaloneView:boolean;
-  dashboardId:string;
 }
 
 export default class ConfigDashboard extends React.Component<IConfigDashboardProps, IConfigDashboardState> {
@@ -35,68 +29,68 @@ export default class ConfigDashboard extends React.Component<IConfigDashboardPro
     error: null
   };
 
-  
   constructor(props: any) {
     super(props);
 
     this.onSave = this.onSave.bind(this);
-    this.onCancel = this.onCancel.bind(this);
     this.onSaveGoToDashboard = this.onSaveGoToDashboard.bind(this);
-    this.redirectToHomepageIfStandalone = this.redirectToHomepageIfStandalone.bind(this);
-    this.state.connections = this.props.connections;
+    this.onCancel = this.onCancel.bind(this);
   }
-
 
   onParamChange(connectionKey: string, paramKey: string, value: any) {
     let { connections } = this.state;
     connections[connectionKey] = connections[connectionKey] || {};
     connections[connectionKey][paramKey] = value;
+    this.setState({ connections });
   }
 
   onSave() {
-    
+    let { dashboard } = this.props;
+    let { connections } = this.state;
+
+    if (!dashboard.config.connections) {
+      dashboard.config.connections = connections;
+
+    } else {
+      _.keys(connections).forEach(connectionKey => {
+
+        if (!dashboard.config.connections[connectionKey]) {
+          dashboard.config.connections[connectionKey] = connections[connectionKey];
+        } else {
+          _.extend(dashboard.config.connections[connectionKey], connections[connectionKey]);
+        }
+      });
+    }
+
+    ConfigurationsActions.saveConfiguration(dashboard);
   }
 
   onSaveGoToDashboard() {
     this.onSave();
-    if(this.props.standaloneView){
 
-      //why is there a timer here and not a callback?
-      setTimeout(() => {
-        this.redirectToHomepageIfStandalone();    
-      }, 2000);
-    }
+    let { dashboard } = this.props;
+    
+    setTimeout(
+      () => {
+        window.location.replace(`/dashboard/${dashboard.id}`);
+      }, 
+      2000
+    );
   }
 
   onCancel() {
-    this.redirectToHomepageIfStandalone();    
+    let { dashboard } = this.props;
+    window.location.replace(`/dashboard/${dashboard.id}`); 
   }
 
-  redirectToHomepageIfStandalone(){
-    if(this.props.standaloneView){
-      let { dashboardId} = this.props;
-        window.location.replace(`/dashboard/${dashboardId}`); 
-    }
-  }
-
-  displayToolbarIfStandalone() {
-    if (this.props.standaloneView) {
-      return (
-        <div>
-          <Button flat primary label="Save" onClick={this.onSave}>save</Button>
-          <Button flat secondary label="Save and Go to Dashboard" onClick={this.onSaveGoToDashboard}>save</Button>
-          <Button flat secondary label="Cancel" onClick={this.onCancel}>cancel</Button>
-        </div>
-      );
-    } else {
-      return null;
-    }
-  }
   render() {
 
-    
+    if (!this.props.dashboard) {
+      return null;
+    }
 
-    let { error,connections } = this.state;
+    let { connections } = this.props;
+    let { error } = this.state;
 
     return (
       <div style={{ width: '100%' }}>
@@ -132,9 +126,11 @@ export default class ConfigDashboard extends React.Component<IConfigDashboardPro
             );
           }
         })}
-        
-        {this.displayToolbarIfStandalone()}
-        
+
+        <br/>
+        <Button flat primary label="Save" onClick={this.onSave}>save</Button>
+        <Button flat secondary label="Save and Go to Dashboard" onClick={this.onSaveGoToDashboard}>save</Button>
+        <Button flat secondary label="Cancel" onClick={this.onCancel}>cancel</Button>
       </div>
     );
   }

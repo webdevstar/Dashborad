@@ -1,6 +1,4 @@
-import { createDashboard } from './utils';
-
-let dashboard = createDashboard();
+import dashboard from './dashboard';
 dashboard.dataSources.push({
   id: 'timespan',
   type: 'Constant',

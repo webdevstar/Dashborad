@@ -1,11 +1,9 @@
-import { createDashboard } from "./utils";
-
 let someJsonValues = [
   { id: 1, count: 2 },
   { id: 2, count: 0 }
 ];
 
-let dashboard = createDashboard();
+import dashboard from './dashboard';
 dashboard.dataSources.push({
   id: 'data',
   type: 'Constant',
