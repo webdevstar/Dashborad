@@ -12,13 +12,6 @@ const cosmosDBRouter = require('./routes/cosmos-db');
 const azureRouter = require('./routes/azure');
 
 const app = express();
-
-
-app.use((req, res, next) => {
-  console.log(`Request URL: ${req.url}`);
-  return next();
-});
-
 app.use(cookieParser());
 app.use(expressSession({ secret: 'keyboard cat', resave: true, saveUninitialized: false }));
 app.use(bodyParser.json());

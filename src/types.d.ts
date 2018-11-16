@@ -155,5 +155,4 @@ interface ISetupConfig {
   redirectUrl: string;
   clientID: string;
   clientSecret: string;
-  issuer: string;
 }

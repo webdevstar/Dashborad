@@ -6,13 +6,11 @@ import Button from 'react-md/lib/Buttons/Button';
 import Switch from 'react-md/lib/SelectionControls/Switch';
 
 import InfoDrawer from '../common/InfoDrawer';
-import { ToastActions } from '../Toast';
 
 import SetupActions from '../../actions/SetupActions';
-import SetupStore, { ISetupStoreState } from '../../stores/SetupStore';
+import SetupStore from '../../stores/SetupStore';
 
 interface ISetupState extends ISetupConfig {
-  editedEmail?: string;
   validEmail?: boolean;
   loaded?: boolean;
 }
@@ -23,44 +21,33 @@ export default class Setup extends React.Component<any, ISetupState> {
     admins: null,
     stage: 'none',
     enableAuthentication: false,
-    editedEmail: '',
     validEmail: true,
     allowHttp: false,
     redirectUrl: '',
     clientID: '',
     clientSecret: '',
-    loaded: false,
-    issuer: ''
+    loaded: false
   };
 
   constructor(props: any) {
     super(props);
 
-    this.updateSetupState = this.updateSetupState.bind(this);
-    this.checkEmailValue = this.checkEmailValue.bind(this);
+    this.checkKeyValue = this.checkKeyValue.bind(this);
     this.onSave = this.onSave.bind(this);
     this.onCancel = this.onCancel.bind(this);
     this.onRemoveAdmin = this.onRemoveAdmin.bind(this);
-    this.onSwitchAllowHttp = this.onSwitchAllowHttp.bind(this);
     this.onSwitchAuthenticationEnables = this.onSwitchAuthenticationEnables.bind(this);
     this.onFieldChange = this.onFieldChange.bind(this);
-    this.getAdminArray = this.getAdminArray.bind(this);
-  }
-
-  updateSetupState(state: ISetupStoreState) {
-    this.setState(state);
   }
 
   componentDidMount() {
 
-    this.updateSetupState(SetupStore.getState());
+    this.setState(SetupStore.getState());
 
     SetupActions.load();
-    SetupStore.listen(this.updateSetupState);
-  }
-
-  componentWillUnmount() {
-    SetupStore.unlisten(this.updateSetupState);
+    SetupStore.listen(state => {
+      this.setState(state);
+    });
   }
 
   validateEmail(email: string): boolean {
@@ -69,10 +56,7 @@ export default class Setup extends React.Component<any, ISetupState> {
     return re.test(email);
   }
 
-  checkEmailValue(e: any) {
-
-    this.setState({ editedEmail: e.target.value })
-
+  checkKeyValue(e: any) {
     if (e.key === 'Enter') {
 
       let email = e.target.value;
@@ -91,60 +75,15 @@ export default class Setup extends React.Component<any, ISetupState> {
     return true;
   }
 
-  fixRedirectUrl(redirectUrl: string): string {
-    if (redirectUrl) { return redirectUrl; }
-
-    let host = window.location.host;
-
-    // On localhost, authentication requests go directly to port 4000
-    if (host === 'localhost:3000') { host = 'localhost:4000'; }
-
-    return window.location.protocol + '//' + host + '/auth/openid/return';
-  }
-
-  getAdminArray(): string[] {
-    let admins = this.state.admins || [];
-    if (this.state.editedEmail) {
-      admins.push(this.state.editedEmail);
-    }
-    return admins;
-  }
-
-  onSave(): any {
-
-    let admins = this.getAdminArray();
-    let redirectUrl = this.fixRedirectUrl(this.state.redirectUrl);
-
-    if (this.state.enableAuthentication) {
-      if (!admins || !admins.length) { 
-        return ToastActions.addToast({ text: 'Fill in at least one admin', action: null }); 
-      }
-      if (!redirectUrl) { 
-        return ToastActions.addToast({ text: 'Fill in redirect url', action: null }); 
-      }
-      if (!this.state.issuer) { 
-        return ToastActions.addToast({ text: 'Fill in issuer', action: null }); 
-      }
-      if (!this.state.clientID) { 
-        return ToastActions.addToast({ text: 'Fill in client ID', action: null }); 
-      }
-      if (!this.state.clientSecret) { 
-        return ToastActions.addToast({ text: 'Fill in client secret', action: null }); 
-      }
-      if (!this.state.allowHttp && redirectUrl.startsWith('http:')) { 
-        return ToastActions.addToast({ text: 'Redirect url should start with https or enable http redirects', action: null }); 
-      }
-    }
-  
+  onSave () {
     var setupConfig = {
-      admins: admins,
+      admins: this.state.admins,
       stage: this.state.stage,
       enableAuthentication: this.state.enableAuthentication,
       allowHttp: this.state.allowHttp,
-      redirectUrl: redirectUrl,
+      redirectUrl: this.state.redirectUrl,
       clientID: this.state.clientID,
-      clientSecret: this.state.clientSecret,
-      issuer: this.state.issuer
+      clientSecret: this.state.clientSecret
     };
     SetupActions.save(setupConfig, () => { window.location.replace('/'); });
   }
@@ -179,10 +118,11 @@ export default class Setup extends React.Component<any, ISetupState> {
 
   render() {
 
-    let { admins, loaded, validEmail, enableAuthentication, redirectUrl, clientID, clientSecret, issuer } = this.state;
+    let { admins, loaded, validEmail, enableAuthentication, redirectUrl, clientID, clientSecret } = this.state;
 
-    // Setting default redirect parameter
-    redirectUrl = this.fixRedirectUrl(redirectUrl);
+    if (!redirectUrl) {
+      redirectUrl = window.location.protocol + '//' + window.location.host + '/auth/openid/return';
+    }
 
     if (!loaded) {
       return null;
@@ -203,7 +143,6 @@ export default class Setup extends React.Component<any, ISetupState> {
       <div style={{ width: '100%' }}>
         <Switch
           id="enableAuthentication" 
-          name="enableAuthentication"
           label="Enable Authentication"
           checked={enableAuthentication}
           onChange={this.onSwitchAuthenticationEnables}
@@ -232,7 +171,6 @@ export default class Setup extends React.Component<any, ISetupState> {
             <div>
               <Switch
                 id="allowHttp" 
-                name="allowHttp"
                 label="Allow http in authentication responses"
                 checked={this.state.allowHttp}
                 onChange={this.onSwitchAllowHttp}
@@ -244,11 +182,11 @@ export default class Setup extends React.Component<any, ISetupState> {
                 id="adminEmail"
                 label="Administrator Email"
                 error={!validEmail}
-                errorText={(!validEmail && 'Please enter a valid email address') || ''}
+                errorText={!validEmail && 'Please enter a valid email address'}
                 lineDirection="center"
                 placeholder="Enter an additional administrator email"
                 className="md-cell md-cell--bottom"
-                onKeyDown={this.checkEmailValue}
+                onKeyDown={this.checkKeyValue}
               />
               <TextField 
                 id="redirectUrl"
@@ -276,15 +214,6 @@ export default class Setup extends React.Component<any, ISetupState> {
                 placeholder="Enter client secret for registered application"
                 className="md-cell md-cell--bottom"
                 defaultValue={clientSecret}
-                onChange={this.onFieldChange}
-              />
-              <TextField 
-                id="issuer"
-                label="Issuer: https://sts.windows.net/{Tenant-ID}/"
-                lineDirection="center"
-                placeholder="https://sts.windows.net/{Tenant-ID}/"
-                className="md-cell md-cell--bottom"
-                defaultValue={issuer}
                 onChange={this.onFieldChange}
               />
             </div>)
