@@ -3,16 +3,31 @@ import * as React from 'react';
 import FontIcon from 'react-md/lib/FontIcons';
 import TextField from 'react-md/lib/TextFields';
 
-import  {BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettings';
+import  {BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettingsComponent';
 
-export default class BarDataSettings extends BaseSettings<IBaseSettingsState> {
+import settings from './Settings';
+
+export default class BarDataSettings extends BaseSettings {
     
+  editor = settings;
+
   icon = 'insert_chart';
   
+  constructor(props: IBaseSettingsProps) {
+    super(props);
+    this.onParamChange = this.onParamChange.bind(this);
+  } 
+
+  onParamChange(value: string, event: any) {
+    let { stateSettings } = this.state;
+    let id = event.target.id;
+
+    this.updateProperty(stateSettings, id, value);
+    this.setState({ stateSettings });
+  }
+
   renderChildren() {
-    let { settings } = this.props;
-    let { props } = settings;
-    
+    let { props } = this.state.stateSettings;
     return (
       <TextField
         id="props.nameKey"

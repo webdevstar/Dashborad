@@ -4,15 +4,34 @@ import * as _ from 'lodash';
 import FontIcon from 'react-md/lib/FontIcons';
 import Switch from 'react-md/lib/SelectionControls/Switch';
 
-import { BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettings';
+import { BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettingsComponent';
 
-export default class AreaSettings extends BaseSettings<IBaseSettingsState> {
+export default class AreaSettings extends BaseSettings {
 
+  // abstract members implementation
   icon = 'flip_to_front';
 
+  constructor(props: IBaseSettingsProps) {
+    super(props);
+
+    this.onShowLegendChange = this.onShowLegendChange.bind(this);
+  }
+    
+  onShowLegendChange(checked: boolean) {
+    let { stateSettings } = this.state;
+    stateSettings.props.showLegend = checked;
+    this.setState({ stateSettings });
+  }
+
+  onIsStackedChange(checked: boolean) {
+    let { stateSettings } = this.state;
+    stateSettings.props.isStacked = checked;
+    this.setState({ stateSettings });
+  }
+
   renderChildren() {
-    let { settings } = this.props;
-    let { id, dependencies, actions, props, title, subtitle, size, theme, type } = settings;
+    
+    let { id, dependencies, actions, props, title, subtitle, size, theme, type } = this.state.stateSettings;
     
     return (
       <span >
@@ -24,8 +43,8 @@ export default class AreaSettings extends BaseSettings<IBaseSettingsState> {
                 id="props.showLegend" 
                 name="props.showLegend" 
                 label="Show legend" 
-                defaultChecked={props.showLegend} 
-                onChange={this.onParamChange} 
+                checked={props.showLegend} 
+                onChange={this.onShowLegendChange} 
               />
             </span>
           </div>
@@ -38,8 +57,8 @@ export default class AreaSettings extends BaseSettings<IBaseSettingsState> {
                 id="props.isStacked" 
                 name="props.isStacked" 
                 label="Is Stacked" 
-                defaultChecked={props.isStacked} 
-                onChange={this.onParamChange} 
+                checked={props.isStacked} 
+                onChange={this.onIsStackedChange} 
               />
             </span>
           </div>

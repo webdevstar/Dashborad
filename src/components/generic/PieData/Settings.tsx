@@ -4,16 +4,26 @@ import * as _ from 'lodash';
 import FontIcon from 'react-md/lib/FontIcons';
 import Switch from 'react-md/lib/SelectionControls/Switch';
 
-import { BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettings';
+import { BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettingsComponent';
 
-export default class PieSettings extends BaseSettings<IBaseSettingsState> {
+export default class PieSettings extends BaseSettings {
 
   icon = 'pie_chart';
 
-  renderChildren() {
-    let { settings } = this.props;
-    let { id, dependencies, actions, props, title, subtitle, size, theme, type } = settings;
+  constructor(props: IBaseSettingsProps) {
+    super(props);
 
+    this.onShowLegendChange = this.onShowLegendChange.bind(this);
+  }
+  
+  onShowLegendChange(checked: boolean) {
+    let { stateSettings } = this.state;
+    stateSettings.props.showLegend = checked;
+    this.setState({ stateSettings });
+  }
+
+  renderChildren() {
+    let { id, dependencies, actions, props, title, subtitle, size, theme, type } = this.state.stateSettings;
     return (
       <span className="md-cell md-cell--bottom  md-cell--6">
         <div className="md-grid">
@@ -23,8 +33,8 @@ export default class PieSettings extends BaseSettings<IBaseSettingsState> {
               id="props.showLegend" 
               name="props.showLegend" 
               label="Show legend" 
-              defaultChecked={props.showLegend} 
-              onChange={this.onParamChange} 
+              checked={props.showLegend} 
+              onChange={this.onShowLegendChange} 
             />
           </span>
         </div>

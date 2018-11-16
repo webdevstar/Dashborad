@@ -5,26 +5,56 @@ import FontIcon from 'react-md/lib/FontIcons';
 import TextField from 'react-md/lib/TextFields';
 import SelectField from 'react-md/lib/SelectFields';
 
-import { BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettings';
+import { BaseSettings, IBaseSettingsProps, IBaseSettingsState } from '../../common/BaseSettingsComponent';
 import ArrayInput from '../../common/ArrayInput';
 import { ToastActions } from '../../Toast';
 
-export default class ScatterSettings extends BaseSettings<IBaseSettingsState> {
+export default class ScatterSettings extends BaseSettings {
 
   icon = 'bubble_chart';
 
   constructor(props: IBaseSettingsProps) {
     super(props);
 
+    this.onParamChange = this.onParamChange.bind(this);
     this.onRangeParamChange = this.onRangeParamChange.bind(this);
+  }
+  
+  onParamChange(value: string, event: any) {
+    let { stateSettings } = this.state;
+    let id = event.target.id;
+
+    this.updateProperty(stateSettings, id, value);
+    this.setState({ stateSettings });
+  }
+
+  onParamSelectChange(newValue: string, newActiveIndex: number, event: any) {
+
+    // A little hacking to get the id of the parent, 
+    // because event does not contain the outer element, but only the inner li
+    let { stateSettings } = this.state;
+    let cur = event.target;
+
+    while (cur && !cur.classList.contains('ddl')) {
+      cur = cur.parentNode;
+    }
+
+    if (cur) {
+      cur = cur.querySelector('input');
+      let id = cur.id;
+      this.updateProperty(stateSettings, id, newValue);
+      this.setState({ stateSettings });
+    }
   }
   
   onRangeParamChange(value: string, event: any) {
 
     try {
-      let { settings } = this.props;
+      let { stateSettings } = this.state;
       let idx = _.toNumber(_.replace(event.target.id, 'props.zRange.', ''));
-      settings.props.zRange[idx] = _.toNumber(value);
+      stateSettings.props.zRange[idx] = _.toNumber(value);
+
+      this.setState({ stateSettings });
 
     } catch (e) {
       ToastActions.showText('onRangeParamChange failed to update value. ' + e);
@@ -32,8 +62,8 @@ export default class ScatterSettings extends BaseSettings<IBaseSettingsState> {
   }
 
   renderChildren() {
-    let { settings } = this.props;
-    let { id, dependencies, actions, props, title, subtitle, size, theme, type } = settings;
+    let { stateSettings } = this.state;
+    let { id, dependencies, actions, props, title, subtitle, size, theme, type } = stateSettings;
 
     return (
       <span className="md-cell md-cell--bottom  md-cell--12 md-grid">
@@ -43,7 +73,7 @@ export default class ScatterSettings extends BaseSettings<IBaseSettingsState> {
           placeholder="xDataKey"
           leftIcon={<FontIcon>tune</FontIcon>}
           className="md-cell md-cell--bottom  md-cell--6"
-          defaultValue={props.xDataKey}
+          value={props.xDataKey}
           onChange={this.onParamChange}
         />
         <TextField
@@ -52,7 +82,7 @@ export default class ScatterSettings extends BaseSettings<IBaseSettingsState> {
           placeholder="yDataKey"
           leftIcon={<FontIcon>tune</FontIcon>}
           className="md-cell md-cell--bottom  md-cell--6"
-          defaultValue={props.yDataKey}
+          value={props.yDataKey}
           onChange={this.onParamChange}
         />
         <TextField
@@ -61,7 +91,7 @@ export default class ScatterSettings extends BaseSettings<IBaseSettingsState> {
           placeholder="zDataKey"
           leftIcon={<FontIcon>tune</FontIcon>}
           className="md-cell md-cell--bottom  md-cell--6"
-          defaultValue={props.zDataKey}
+          value={props.zDataKey}
           onChange={this.onParamChange}
         />
         
@@ -72,7 +102,7 @@ export default class ScatterSettings extends BaseSettings<IBaseSettingsState> {
               label="Range Min"
               placeholder="10"
               className="md-cell md-cell--bottom  md-cell--6"
-              defaultValue={props.zRange[0]}
+              value={props.zRange[0]}
               onChange={this.onRangeParamChange}
               leftIcon={<FontIcon>vertical_align_bottom</FontIcon>}
             />
@@ -81,7 +111,7 @@ export default class ScatterSettings extends BaseSettings<IBaseSettingsState> {
               label="Range Max"
               placeholder="500"
               className="md-cell md-cell--bottom  md-cell--6"
-              defaultValue={props.zRange[1]}
+              value={props.zRange[1]}
               onChange={this.onRangeParamChange}
               leftIcon={<FontIcon>vertical_align_top</FontIcon>}
             />
