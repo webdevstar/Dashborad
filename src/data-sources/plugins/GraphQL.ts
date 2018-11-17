@@ -35,8 +35,9 @@ export default class GraphQL extends DataSourcePlugin<IGraphQLParams> {
       return dispatch => dispatch();
     }
 
-    const params = this.getParams();
-    const { query, variables } = params;
+    const params = this.getParams() || ({} as IGraphQLParams);
+    const query = params.query || '';
+    const variables = dependencies['variables'] || params.variables;
 
     return dispatch => {
       request('/graphql/query', {
@@ -47,8 +48,9 @@ export default class GraphQL extends DataSourcePlugin<IGraphQLParams> {
           query: query,
           variables: variables
         }
-      },      (error, json) => {
-        if (error) {
+      },      (err, json) => {
+        const error = err || (json['errors'] && json['errors'][0]);
+        if (error || json['errors']) {
           console.log(error);
           return this.failure(error);
         }
