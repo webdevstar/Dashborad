@@ -57,21 +57,13 @@ export default class InfoDrawer extends React.Component<IInfoDrawerProps, IInfoD
 
     return (
       <div>
-        <div style={{ width: 310 }}>
-          <Button
+        <Button 
             icon={!!buttonIcon}
             tooltipLabel={buttonTooltip}
             onClick={this.open}
-          >
-            {buttonIcon}
-
-          </Button>
-          {buttonLabel && (
-            <span onClick={this.open} style={{ float: 'right', marginTop: 15 }}>
-              {buttonLabel}
-            </span>
-          )}
-        </div>
+        >
+          {buttonIcon}
+        </Button>
         <Drawer
           visible={open}
           defaultVisible={false}
