@@ -129,8 +129,7 @@ export default class ApplicationInsightsQuery extends DataSourcePlugin<IQueryPar
 
           // Map tables to appropriate results
           var resultTables = tables.filter((aTable, idx) => {
-            return idx < resultStatus.length && 
-                    (resultStatus[idx].Kind === 'QueryResult' || resultStatus[idx].Kind === 'PrimaryResults');
+            return idx < resultStatus.length && resultStatus[idx].Kind === 'QueryResult';
           });
 
           let returnedResults = {
