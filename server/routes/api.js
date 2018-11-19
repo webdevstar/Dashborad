@@ -26,7 +26,6 @@ const fields = {
 }
 
 const getField = (regExp, text) => {
-  regExp.lastIndex = 0;
   const matches = regExp.exec(text);
   return matches && matches.length >= 3 && matches[2];
 }
@@ -106,7 +105,7 @@ router.get('/dashboards', (req, res) => {
       }
     });
   }
-  
+
   res.send(script);  
 });
 

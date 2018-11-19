@@ -11,7 +11,6 @@ import { Link } from 'react-router';
 import Chip from 'react-md/lib/Chips';
 import Menu from 'react-md/lib/Menus/Menu';
 import MenuButton from 'react-md/lib/Menus/MenuButton';
-import Button from 'react-md/lib/Buttons';
 
 import AccountStore from '../../stores/AccountStore';
 import AccountActions from '../../actions/AccountActions';
@@ -45,24 +44,8 @@ export default class Navbar extends React.Component<any, any> {
     });
   }
 
-  componentDidMount() {
-    // Checking if running locally and authentication is activated
-    // This is a mitigation that handles authentication in local environment
-    // that relies on two ports and redirections.
-    if (window.location.port === '3000' && window.location.hostname === 'localhost') {
-      setTimeout(
-        () => {
-          if (!window['dashboardTemplates']) {
-            this.setState({ noTemplates: true });
-          }
-        }, 
-        5000
-      );
-    }
-  }
-
   render() {
-    let { dashboards, noTemplates } = this.state;
+    let { dashboards } = this.state;
     let { children, title } = this.props;
     let pathname = '/';
     try { pathname = window.location.pathname; } catch (e) { }
@@ -99,31 +82,31 @@ export default class Navbar extends React.Component<any, any> {
       );
     });
 
-    if (!toolbarTitle) {
+    if (!title) {
       switch (window.location.pathname) {
         case '/':
-          toolbarTitle = 'Create Dashboard';
+          title = 'Create Dashboard';
           break;
 
         case '/about':
-          toolbarTitle = 'Help';
+          title = 'Help';
           break;
 
         case '/dashboard':
-          toolbarTitle = 'Dashboard';
+          title = 'Dashboard';
           break;
 
         case '/dashboard/config':
-          toolbarTitle = 'Dashboard Configuration';
+          title = 'Dashboard Configuration';
           break;
 
         case '/setup':
-          toolbarTitle = 'Setup Authentication';
+          title = 'Setup Authentication';
           break;
 
         default:
 
-          toolbarTitle = 'Ibex Dashboard';
+          title = 'Ibex Dashboard';
           break;
       }
     }
@@ -131,14 +114,7 @@ export default class Navbar extends React.Component<any, any> {
     const drawerType = navigationItems.length > 0 ?
       NavigationDrawer.DrawerTypes.TEMPORARY_MINI : NavigationDrawer.DrawerTypes.TEMPORARY;
 
-    const toolbarActions = [(
-      <Button
-          icon 
-          tooltipLabel="Create Dashboard"
-          href="/"
-          component={Link}
-      >add_box
-      </Button>), (
+    const toolbarActions = (
       <MenuButton
         id="vert-menu"
         icon
@@ -161,6 +137,13 @@ export default class Navbar extends React.Component<any, any> {
             )
         }
         <ListItem
+          primaryText="Create Dashboard"
+          href="/"
+          active={pathname === '/'}
+          component={Link}
+          leftIcon={<FontIcon>add_box</FontIcon>}
+        />
+        <ListItem
           primaryText="Setup Authentication"
           href="/setup"
           active={pathname === '/setup'}
@@ -168,19 +151,7 @@ export default class Navbar extends React.Component<any, any> {
           leftIcon={<FontIcon>lock</FontIcon>}
         />
       </MenuButton>
-      )];
-
-    if (noTemplates && !dashboards && window.location.pathname !== '/setup') {
-      children = (
-        <div>
-          <h1>There's seems to be a problem</h1>
-          <span>If you are running locally, ensure to first open </span>
-          <a target="_blank" href="http://localhost:4000">http://localhost:4000</a>
-          <span> and then </span>
-          <a href="http://localhost:3000">http://localhost:3000</a>.
-        </div>
-      );
-    }
+    );
 
     return (
       <div>
@@ -199,7 +170,7 @@ export default class Navbar extends React.Component<any, any> {
           </NavigationDrawer>
         ) : (
             <div>
-              <Toolbar title={toolbarTitle} actions={toolbarActions} colored />
+              <Toolbar title={title} actions={toolbarActions} colored />
               <div className="md-grid">
                 {children}
               </div>
