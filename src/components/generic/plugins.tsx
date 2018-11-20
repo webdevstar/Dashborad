@@ -7,7 +7,6 @@ import Scorecard from './Scorecard';
 import RadarChartCard from './RadarChartCard';
 import RadialBarChartCard from './RadialBarChartCard';
 import SimpleRadialBarChartCard from './SimpleRadialBarChartCard';
-import MapData from './MapData';
 // filters
 import TextFilter from './TextFilter';
 import CheckboxFilter from './CheckboxFilter';
@@ -16,7 +15,7 @@ import MenuFilter from './MenuFilter';
 import Table from './Table';
 import Detail from './Detail';
 import SplitPanel from './SplitPanel';
-import RequestButton from './RequestButton';
+import MapData from './MapData';
 
 export default {
   PieData,
@@ -34,6 +33,5 @@ export default {
   MapData,
   RadarChartCard,
   RadialBarChartCard,
-  SimpleRadialBarChartCard,
-  RequestButton,
+  SimpleRadialBarChartCard
 };

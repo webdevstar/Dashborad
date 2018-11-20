@@ -5,6 +5,7 @@ import { Card, CardTitle, CardActions, CardText } from 'react-md/lib/Cards';
 import Media, { MediaOverlay } from 'react-md/lib/Media';
 import Dialog from 'react-md/lib/Dialogs';
 import TextField from 'react-md/lib/TextFields';
+import { Link } from 'react-router';
 
 import SetupActions from '../../actions/SetupActions';
 import SetupStore from '../../stores/SetupStore';
@@ -18,20 +19,11 @@ const styles = {
   card: {
     minWidth: 400,
     height: 200,
-    marginTop: 50,
+    marginTop: 40,
   },
   image: {
-    filter: 'opacity(30%) grayscale(70%)'
+    filter: 'opacity(30%)'
   },
-  fabs: {
-    position: 'absolute',
-    bottom: '50px',
-    right: '10px',
-    zIndex: 1,
-  },
-  primaryFab: {
-    marginLeft: '2px'
-  }
 };
 
 interface IHomeState extends ISetupConfig {
@@ -183,41 +175,36 @@ export default class Home extends React.Component<any, IHomeState> {
       return null;
     }
 
-    let createCard = (temp, index) => (
+    let templateCards = templates.map((temp, index) => (
       <div key={index} className="md-cell" style={styles.card}>
         <Card className="md-block-centered" key={index} >
           <Media>
             <img src={temp.preview} role="presentation" style={styles.image} />
             <MediaOverlay>
-              <CardTitle title={temp.name} subtitle={temp.description} />
+              <CardTitle title={temp.name} subtitle={temp.description} >
+                <Button
+                  icon
+                  onClick={this.onOpenInfo.bind(this, temp.html)}
+                  className="md-cell--right"
+                >
+                  info
+                </Button>
+                <Button
+                  icon
+                  onClick={this.onNewTemplateSelected.bind(this, temp.id)}
+                  className="md-cell--right"
+                >
+                  add_circle_outline
+                </Button>
+              </CardTitle>
             </MediaOverlay>
           </Media>
-          <CardActions style={styles.fabs}>
-            <Button floating secondary onClick={this.onOpenInfo.bind(this, temp.html || '<p>No info available</p>')}>
-              info
-            </Button>
-            <Button floating primary onClick={this.onNewTemplateSelected.bind(this, temp.id)} style={styles.primaryFab}>
-              add_circle_outline
-            </Button>
-          </CardActions>
         </Card>
       </div>
-    );
-
-    // Finding featured
-    let featuredCards = templates
-                          .filter(temp => temp.id === 'bot_analytics_dashboard' || temp.id === 'bot_analytics_inst')
-                          .map(createCard);
-    let templateCards = templates.map(createCard);
+    ));
 
     return (
       <div>
-        <h1>Bot Analytics</h1>
-        <div className="md-grid">
-          {featuredCards}
-        </div>
-
-        <h1>All Dashboards</h1>
         <div className="md-grid">
           {templateCards}
         </div>
@@ -244,8 +231,8 @@ export default class Home extends React.Component<any, IHomeState> {
           dialogStyle={{ width: '50%' }}
           modal
           actions={[
-            { onClick: this.onNewTemplateCancel, primary: false, label: 'Cancel' },
-            { onClick: this.onNewTemplateSave, primary: true, label: 'Create', },
+            { onClick: this.onNewTemplateSave, primary: false, label: 'Create', },
+            { onClick: this.onNewTemplateCancel, primary: true, label: 'Cancel' }
           ]}
         >
           <TextField

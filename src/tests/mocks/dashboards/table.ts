@@ -1,7 +1,4 @@
-import samples from './samples';
-import { createDashboard } from "./utils";
-
-let dashboard = createDashboard(samples);
+import dashboard from './samples';
 dashboard.elements.push({
   id: 'table',
   type: 'Table',
