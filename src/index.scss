@@ -142,7 +142,6 @@ h2, .md-subheading-2 {
 
 .md-data-table {
 
-
   &.table-compact {
     .md-table-column--header {
       height: 47px;
@@ -157,13 +156,13 @@ h2, .md-subheading-2 {
   }
 
   .md-table-row {
-    .md-btn--icon {
-      color: $md-secondary-color;
-      height: 30px;
-      padding: 3px 0 10px 0;
-      width: 30px;
-      visibility: hidden;
-    }
+      .md-btn--icon {
+        color: $md-secondary-color;
+        height: 30px;
+        padding: 3px 0 10px 0;
+        width: 30px;
+        visibility: hidden;
+      }
 
     &:hover {
       .md-btn--icon {
@@ -172,49 +171,11 @@ h2, .md-subheading-2 {
     }
   }
 
-  td.message {
-    span {
-      width: 100%;
-      word-wrap: break-word;
-      white-space: normal;
-    }
-  }
-
-  .MBFEvent-BotMessage, tr.Customer { 
+  .message-send { 
     background-color: $md-blue-50;
 
-    td.message, td.text {
+    td.message {
       text-align: right;
-    }
-  }
-
-  tr.intent td.message .indicator {
-    //background-color: $md-red-50;
-
-    display:inline-block;
-    width: .5em;
-    height: .8em;
-    position:relative;
-
-    &:before,
-    &:after {
-      display:block;
-      content:"";
-      width:10px;
-      height:0em;
-      border-style:solid;
-      position:absolute;
-    }
-    &:before {
-      top: 2px;
-      right:0;
-      border-width:.4em 0 .4em .4em;
-      border-color:transparent transparent transparent $md-secondary-color;    
-    }
-    &:after {
-      left:0;
-      border-width:.4em 0 .4em .4em;
-      border-color:transparent transparent transparent transparent;    
     }
   }
 }
@@ -234,12 +195,6 @@ h2, .md-subheading-2 {
   .md-avatar-content {
     font-size: 14px;
   }
-}
-
-ul.aligned {
-  margin: 16px;
-  padding: 0;
-  list-style-position: 'outside';
 }
 
 /*================*/
@@ -274,27 +229,4 @@ ul.aligned {
   b {
     font-weight: 600;
   }
-}
-
-
-/*================*/
-/* Dialogs with toolbar */
-/*================*/
-
-.dialog-toolbar-no-padding .md-dialog-content--padded{
-  padding: 0px;
-}
-.dialog-toolbar-no-padding footer{
-  position: absolute;
-  bottom:0px;
-  right:0px;
-  width:100%;
-}
-
-
-.vertical-menu .active-item{
-  background: $md-cyan-500;
-}
-.vertical-menu .md-text--theme-primary{
-  color: $md-cyan-50;
 }

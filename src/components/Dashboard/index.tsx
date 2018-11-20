@@ -4,7 +4,6 @@ import * as _ from 'lodash';
 import Toolbar from 'react-md/lib/Toolbars';
 import Button from 'react-md/lib/Buttons';
 import Dialog from 'react-md/lib/Dialogs';
-
 import { Spinner } from '../Spinner';
 
 import * as ReactGridLayout from 'react-grid-layout';
@@ -16,7 +15,6 @@ import ElementConnector from '../ElementConnector';
 import { loadDialogsFromDashboard } from '../generic/Dialogs';
 import IDownloadFile, { exportDataSources, createDownloadFiles, downloadBlob } from './DownloadFile';
 
-import { SettingsButton } from '../Settings';
 import ConfigurationsActions from '../../actions/ConfigurationsActions';
 import ConfigurationsStore from '../../stores/ConfigurationsStore';
 import VisibilityStore from '../../stores/VisibilityStore';
@@ -31,10 +29,6 @@ import Avatar from 'react-md/lib/Avatars';
 import Subheader from 'react-md/lib/Subheaders';
 import Divider from 'react-md/lib/Dividers';
 
-interface IDashboardProps {
-  dashboard?: IDashboardConfig;
-}
-
 interface IDashboardState {
   editMode?: boolean;
   askDelete?: boolean;
@@ -45,14 +39,17 @@ interface IDashboardState {
   currentBreakpoint?: string;
   layouts?: ILayouts;
   grid?: any;
-  askConfig?: boolean;
   visibilityFlags?: IDict<boolean>;
   infoVisible?: boolean;
   infoHtml?: string;
 }
 
+interface IDashboardProps {
+  dashboard?: IDashboardConfig;
+}
+
 export default class Dashboard extends React.Component<IDashboardProps, IDashboardState> {
- 
+
   layouts = {};
 
   state = {
@@ -65,7 +62,6 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     mounted: false,
     layouts: {},
     grid: null,
-    askConfig: false,
     visibilityFlags: {},
     infoVisible: false,
     infoHtml: '',
@@ -76,18 +72,18 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
 
     this.onBreakpointChange = this.onBreakpointChange.bind(this);
     this.onLayoutChange = this.onLayoutChange.bind(this);
-    this.onConfigDashboard = this.onConfigDashboard.bind(this);
+    this.onEditDashboard = this.onEditDashboard.bind(this);
     this.toggleEditMode = this.toggleEditMode.bind(this);
     this.onDeleteDashboard = this.onDeleteDashboard.bind(this);
     this.onDeleteDashboardApprove = this.onDeleteDashboardApprove.bind(this);
     this.onDeleteDashboardCancel = this.onDeleteDashboardCancel.bind(this);
-    this.onUpdateLayout = this.onUpdateLayout.bind(this);
     this.onOpenInfo = this.onOpenInfo.bind(this);
     this.onCloseInfo = this.onCloseInfo.bind(this);
     this.onExport = this.onExport.bind(this);
     this.onCloseExport = this.onCloseExport.bind(this);
     this.onClickDownloadFile = this.onClickDownloadFile.bind(this);
     this.onChangeDownloadFormat = this.onChangeDownloadFormat.bind(this);
+
     VisibilityStore.listen(state => {
       this.setState({ visibilityFlags: state.flags });
     });
@@ -137,31 +133,32 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
 
     // Waiting for breakpoint to change
     let currentBreakpoint = this.state.currentBreakpoint;
-    setTimeout(
-      () => {
-        if (currentBreakpoint !== this.state.currentBreakpoint) { return; }
+    setTimeout(() => {
 
-        var breakpoint = this.state.currentBreakpoint;
-        var newLayouts = this.state.layouts;
-        newLayouts[breakpoint] = layout;
-        this.setState({
-          layouts: newLayouts
-        });
+      if (currentBreakpoint !== this.state.currentBreakpoint) { return; }
 
-        // Saving layout to API
-        let { dashboard } = this.props;
-        dashboard.config.layout.layouts = dashboard.config.layout.layouts || {};
-        dashboard.config.layout.layouts[breakpoint] = layout;
+      var breakpoint = this.state.currentBreakpoint;
+      var newLayouts = this.state.layouts;
+      newLayouts[breakpoint] = layout;
+      this.setState({
+        layouts: newLayouts
+      });
 
-        if (this.state.editMode) {
-          ConfigurationsActions.saveConfiguration(dashboard);
-        }
-      },
-      500);
+      // Saving layout to API
+      let { dashboard } = this.props;
+      dashboard.config.layout.layouts = dashboard.config.layout.layouts || {};
+      dashboard.config.layout.layouts[breakpoint] = layout;
+
+      if (this.state.editMode) {
+        ConfigurationsActions.saveConfiguration(dashboard);
+      }
+    },         500);
+
   }
 
-  onConfigDashboard() {
-    this.setState({ askConfig: true });
+  onEditDashboard() {
+    let { dashboard } = this.props;
+    window.location.replace(`/dashboard/${dashboard.id}/config`);
   }
 
   toggleEditMode() {
@@ -180,14 +177,6 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     this.setState({ askDelete: false });
   }
 
-  onConfigDashboardCancel() {
-    this.setState({ askConfig: false });
-  }
-  
-  onUpdateLayout() {
-    this.setState({ editMode: !this.state.editMode });
-    this.setState({ editMode: !this.state.editMode });
-  }
   onOpenInfo(html: string) {
     this.setState({ infoVisible: true, infoHtml: html });
   }
@@ -225,18 +214,9 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
   render() {
 
     let { dashboard } = this.props;
-    let { 
-      currentBreakpoint, 
-      grid, 
-      editMode, 
-      askDelete,
-      askDownload, 
-      downloadFiles, 
-      downloadFormat, 
-      askConfig 
-    } = this.state;
-    let { infoVisible, infoHtml } = this.state;
-    let layout = this.state.layouts[currentBreakpoint];
+    var { currentBreakpoint, grid, editMode, askDelete, askDownload, downloadFiles, downloadFormat } = this.state;
+    var { infoVisible, infoHtml } = this.state;
+    var layout = this.state.layouts[currentBreakpoint];
 
     if (!grid) {
       return null;
@@ -254,31 +234,31 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     // Actions to perform on an active dashboard
     let toolbarActions = [
       (
-       <span><Button key="export" icon tooltipLabel="Export data" onClick={this.onExport}>
+       <Button key="export" icon tooltipLabel="Export data" onClick={this.onExport}>
         play_for_work
-      </Button></span>
+      </Button>
       ), 
       (
-      <span><Button key="info" icon tooltipLabel="Info" onClick={this.onOpenInfo.bind(this, dashboard.html)}>
+      <Button key="info" icon tooltipLabel="Info" onClick={this.onOpenInfo.bind(this, dashboard.html)}>
         info
-      </Button></span>
+      </Button>
       ), (
-      <span><Button key="edit" icon primary={editMode} tooltipLabel="Edit Dashboard" onClick={this.toggleEditMode}>
+      <Button key="edit" icon primary={editMode} tooltipLabel="Edit Dashboard" onClick={this.toggleEditMode}>
         edit
-      </Button></span>
+      </Button>
       ), (
-      <SettingsButton onUpdateLayout={this.onUpdateLayout}/>
+      <Button key="settings" icon tooltipLabel="Connections" onClick={this.onEditDashboard}>
+        settings_applications
+      </Button>
       )
     ];
 
     if (editMode) {
       toolbarActions.push(
-        <span>
-          <Button key="delete" icon tooltipLabel="Delete dashboard" onClick={this.onDeleteDashboard}>delete</Button>
-        </span>
+        <Button key="delete" icon tooltipLabel="Delete dashboard" onClick={this.onDeleteDashboard}>delete</Button>
       );
     }
-    
+
     const fileAvatar = (downloadFormat === 'json') ? 
       <Avatar suffix="red" icon={<FontIcon>insert_drive_file</FontIcon>} /> 
       : <Avatar suffix="green" icon={<FontIcon>description</FontIcon>} /> ;

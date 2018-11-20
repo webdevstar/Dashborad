@@ -43,7 +43,7 @@ export default class ApplicationInsightsQuery extends DataSourcePlugin<IQueryPar
   updateDependencies(dependencies: any) {
     let emptyDependency = false;
     Object.keys(this._props.dependencies).forEach((key) => {
-      if (!key.startsWith('optional_') && typeof dependencies[key] === 'undefined') {
+      if (typeof dependencies[key] === 'undefined') {
         emptyDependency = true;
       }
     });
@@ -129,8 +129,7 @@ export default class ApplicationInsightsQuery extends DataSourcePlugin<IQueryPar
 
           // Map tables to appropriate results
           var resultTables = tables.filter((aTable, idx) => {
-            return idx < resultStatus.length && 
-                    (resultStatus[idx].Kind === 'QueryResult' || resultStatus[idx].Kind === 'PrimaryResults');
+            return idx < resultStatus.length && resultStatus[idx].Kind === 'QueryResult';
           });
 
           let returnedResults = {
