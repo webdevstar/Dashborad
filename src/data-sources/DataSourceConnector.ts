@@ -2,7 +2,7 @@ import alt from '../alt';
 import * as _ from 'lodash';
 import { IDataSourcePlugin } from './plugins/DataSourcePlugin';
 import DialogsActions from '../components/generic/Dialogs/DialogsActions';
-
+import datasourcePluginsMappings from './plugins/PluginsMapping';
 import VisibilityActions from '../actions/VisibilityActions';
 import VisibilityStore from '../stores/VisibilityStore';
 
@@ -36,7 +36,8 @@ export class DataSourceConnector {
     }
 
     // Dynamically load the plugin from the plugins directory
-    var PluginClass = require('./plugins/' + config.type);
+    var path = './plugins/' + datasourcePluginsMappings[config.type];
+    var PluginClass = require(path);
     var plugin: any = new PluginClass.default(config, connections);
 
     // Creating actions class
@@ -94,6 +95,30 @@ export class DataSourceConnector {
       // Checking if this is a constant value
       if (dependency.startsWith('::')) {
         result.dependencies[key] = dependency.substr(2);
+        return;
+      }
+
+      // Checking if this is a config value
+      if (dependency.startsWith('connection:')) {
+        const connection = dependency.substr(dependency.indexOf(':') + 1);
+        if ( Object.keys(DataSourceConnector.dataSources).length < 1 ) {
+          throw new Error('Connection error, couldn\'t find any data sources.');
+        }
+        // Selects first data source to get connections 
+        const dataSource: IDataSource = DataSourceConnector.dataSources[
+          Object.keys(DataSourceConnector.dataSources)[0]];
+        if ( !dataSource || !dataSource.plugin.hasOwnProperty('connections')) {
+          throw new Error('Tried to resolve connections reference path, but couldn\'t find any connections.');
+        }
+        const connections = dataSource.plugin['connections'];
+        const path = connection.split('.');
+        if (path.length !== 2) {
+          throw new Error('Expected connection reference dot path consisting of 2 components.');
+        }
+        if ( !connections.hasOwnProperty(path[0]) || !connections[path[0]].hasOwnProperty(path[1])) {
+          throw new Error('Unable to resolve connection reference path:' + connection);
+        }
+        result.dependencies[key] = connections[path[0]][path[1]];
         return;
       }
 
