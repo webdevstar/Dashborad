@@ -22,6 +22,8 @@ export interface ITableColumnProps {
   type?: ColType;
   click?: string;
   color?: string;
+  tooltip?: string;
+  tooltipPosition?: string;
 }
 
 export interface ITableProps extends IGenericProps {
@@ -101,7 +103,16 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
       switch (col.type) {
 
         case 'icon':
-          return <FontIcon style={style}>{col.value || value[col.field]}</FontIcon>;
+          return !col.tooltip ? <FontIcon style={style}>{col.value || value[col.field]}</FontIcon> : (
+              <Button 
+                icon 
+                tooltipLabel={value[col.tooltip] || col.tooltip} 
+                tooltipPosition={col.tooltipPosition || 'top'}
+                className={this.fixClassName(value[col.field]) + ' tooltip'}
+              >
+                {col.value || value[col.field]}
+              </Button>
+            );
 
         case 'button':
           return (
@@ -146,7 +157,7 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
         {
           cols.map((col, ci) => (
             <TableColumn key={ci} className={this.fixClassName(col.field || col.value)}>
-              {renderColumn(col, value)}
+              <span className="indicator" />{renderColumn(col, value)}
             </TableColumn>
           ))
         }
@@ -158,7 +169,7 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
 
     return (
       <Card className={hideBorders ? 'hide-borders' : ''}>
-        <DataTable plain={!checkboxes} data={checkboxes} className={className} baseId="pagination">
+        <DataTable plain={!checkboxes} data={checkboxes} className={className} baseId="pagination" responsive={false}>
           <TableHeader>
             <TableRow>
               {cols.map((col, i) => (
