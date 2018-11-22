@@ -21,8 +21,6 @@ import ConfigurationsActions from '../../actions/ConfigurationsActions';
 import ConfigurationsStore from '../../stores/ConfigurationsStore';
 import VisibilityStore from '../../stores/VisibilityStore';
 
-import {Editor, EditorActions} from './Editor';
-
 const renderHTML = require('react-render-html');
 
 import List from 'react-md/lib/Lists/List';
@@ -90,6 +88,8 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     this.onCloseExport = this.onCloseExport.bind(this);
     this.onClickDownloadFile = this.onClickDownloadFile.bind(this);
     this.onChangeDownloadFormat = this.onChangeDownloadFormat.bind(this);
+    this.onDownloadDashboard = this.onDownloadDashboard.bind(this);
+    
     VisibilityStore.listen(state => {
       this.setState({ visibilityFlags: state.flags });
     });
@@ -207,6 +207,15 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     this.setState({ askDownload: true, downloadFiles: downloadFiles });
   }
 
+  onDownloadDashboard() {
+    let { dashboard } = this.props;
+    dashboard.config.layout.layouts = dashboard.config.layout.layouts || {};
+    let stringDashboard = ConfigurationsActions.convertDashboardToString(dashboard);
+    var dashboardName = dashboard.id.replace(/  +/g, ' ');
+    dashboardName = dashboard.id.replace(/  +/g, '_');
+    downloadBlob('return ' + stringDashboard, 'application/json', dashboardName + '.private.js');
+  }
+
   onCloseExport(event: any) {
     this.setState({ askDownload: false });
   }
@@ -226,8 +235,8 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
 
   render() {
 
-    const { dashboard } = this.props;
-    const { 
+    let { dashboard } = this.props;
+    let { 
       currentBreakpoint, 
       grid, 
       editMode, 
@@ -237,8 +246,8 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
       downloadFormat, 
       askConfig 
     } = this.state;
-    const { infoVisible, infoHtml } = this.state;
-    const layout = this.state.layouts[currentBreakpoint];
+    let { infoVisible, infoHtml } = this.state;
+    let layout = this.state.layouts[currentBreakpoint];
 
     if (!grid) {
       return null;
@@ -254,59 +263,37 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     var dialogs = loadDialogsFromDashboard(dashboard);
 
     // Actions to perform on an active dashboard
-    let toolbarActions = [];
-
-    if (!editMode) {
-      toolbarActions.push(
-        (
-          <span>
-            <Button key="export" icon tooltipLabel="Export data" onClick={this.onExport}>
-              play_for_work
-            </Button>
-          </span>
-        ),
-        (
-          <span>
-            <Button key="info" icon tooltipLabel="Info" onClick={this.onOpenInfo.bind(this, dashboard.html)}>
-              info
-            </Button>
-          </span>
-        )
-      );
-    } else {
-      toolbarActions.push(
-        (
-          <SettingsButton onUpdateLayout={this.onUpdateLayout} />
-        ),
-        (
-          <span>
-            <Button
-              key="edit-json"
-              icon tooltipLabel="Edit code"
-              onClick={() => EditorActions.loadDashboard(dashboard.id)}
-            >
-              code
-            </Button>
-          </span>
-        ),
-        (
-          <span>
-            <Button key="delete" icon tooltipLabel="Delete dashboard" onClick={this.onDeleteDashboard}>delete</Button>
-          </span>
-        )
-      );
-      toolbarActions.reverse();
-    }
-
-    // Edit toggle button
-    const editLabel = editMode ? 'Finish editing' : 'Edit mode' ;
-    toolbarActions.push(
+    let toolbarActions = [
       (
-        <span><Button key="edit-grid" icon primary={editMode} tooltipLabel={editLabel} onClick={this.toggleEditMode}>
-          edit
-        </Button></span>
+      <span><Button key="downloadDashboard" icon tooltipLabel="Download Dashboard" onClick={this.onDownloadDashboard}>
+        file_download
+      </Button></span>
+      ),
+      (
+       <span><Button key="export" icon tooltipLabel="Export data" onClick={this.onExport}>
+        play_for_work
+      </Button></span>
+      ), 
+      (
+      <span><Button key="info" icon tooltipLabel="Info" onClick={this.onOpenInfo.bind(this, dashboard.html)}>
+        info
+      </Button></span>
+      ), (
+      <span><Button key="edit" icon primary={editMode} tooltipLabel="Edit Dashboard" onClick={this.toggleEditMode}>
+        edit
+      </Button></span>
+      ), (
+      <SettingsButton onUpdateLayout={this.onUpdateLayout}/>
       )
-    );
+    ];
+
+    if (editMode) {
+      toolbarActions.push(
+        <span>
+          <Button key="delete" icon tooltipLabel="Delete dashboard" onClick={this.onDeleteDashboard}>delete</Button>
+        </span>
+      );
+    }
     
     const fileAvatar = (downloadFormat === 'json') ? 
       <Avatar suffix="red" icon={<FontIcon>insert_drive_file</FontIcon>} /> 
@@ -408,8 +395,6 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
             {downloadItems}
           </List>
         </Dialog>
-
-        <Editor dashboard={dashboard} />
 
         <Dialog
           id="speedBoost"
