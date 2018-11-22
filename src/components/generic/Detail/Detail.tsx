@@ -7,12 +7,6 @@ import FontIcon from 'react-md/lib/FontIcons';
 import Button from 'react-md/lib/Buttons/Button';
 import CircularProgress from 'react-md/lib/Progress/CircularProgress';
 
-const styles = {
-  autoscroll: {
-    overflow: 'auto',
-  } as React.CSSProperties
-};
-
 export interface IDetailProps extends IGenericProps {
   props: {
     cols: {
@@ -21,7 +15,6 @@ export interface IDetailProps extends IGenericProps {
       value?: string,
       type?: 'text' | 'time' | 'icon' | 'button',
     }[]
-    hideBorders?: boolean;
   };
 }
 
@@ -40,9 +33,9 @@ export default class Detail extends GenericComponent<IDetailProps, IDetailState>
   }
 
   render() {
-    const { props } = this.props;
-    const { cols, hideBorders } = props;
-    const { values } = this.state;
+    var { props } = this.props;
+    var { cols } = props;
+    var { values } = this.state;
 
     if (!values) {
       return <CircularProgress key="loading" id="spinner" />;
@@ -74,7 +67,7 @@ export default class Detail extends GenericComponent<IDetailProps, IDetailState>
     });
 
     return (
-      <Card className={hideBorders ? 'hide-borders' : ''} style={styles.autoscroll}>
+      <Card>
         {lists}
       </Card>
     );

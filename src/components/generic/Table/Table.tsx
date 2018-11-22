@@ -10,14 +10,6 @@ import FontIcon from 'react-md/lib/FontIcons';
 import Button from 'react-md/lib/Buttons/Button';
 import CircularProgress from 'react-md/lib/Progress/CircularProgress';
 
-const styles = {
-  autoscroll: {
-    overflow: 'auto'
-  } as React.CSSProperties
-};
-
-const defaultPagination: number[] = [10, 50, 100];
-
 export type ColType = 'text' | 'time' | 'icon' | 'button' | 'ago' | 'number';
 
 export interface ITableColumnProps {
@@ -30,8 +22,6 @@ export interface ITableColumnProps {
   type?: ColType;
   click?: string;
   color?: string;
-  tooltip?: string;
-  tooltipPosition?: string;
 }
 
 export interface ITableProps extends IGenericProps {
@@ -40,8 +30,7 @@ export interface ITableProps extends IGenericProps {
     rowClassNameField?: string;
     hideBorders?: boolean;
     compact?: boolean;
-    cols: ITableColumnProps[],
-    defaultRowsPerPage?: number;
+    cols: ITableColumnProps[]
   };
 }
 
@@ -57,16 +46,12 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
   state = {
     values: [],
     rowIndex: 0,
-    rowsPerPage: this.props.props.defaultRowsPerPage || 10,
-    rowsPerPageItems: defaultPagination,
+    rowsPerPage: 10,
     currentPage: 1,
   };
 
   constructor(props: ITableProps) {
     super(props);
-
-    this.state.rowsPerPageItems = defaultPagination.find(n => n === this.state.rowsPerPage) ? defaultPagination 
-      : [...defaultPagination, this.state.rowsPerPage].sort((a, b) => a - b) ;
 
     this.onButtonClick = this.onButtonClick.bind(this);
     this.onRowClick = this.onRowClick.bind(this);
@@ -102,8 +87,8 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
   render() {
     const { props } = this.props;
     const { checkboxes, cols, rowClassNameField, hideBorders, compact } = props;
-    const { values, rowIndex, rowsPerPage, currentPage, rowsPerPageItems } = this.state;
-    
+    const { values, rowIndex, rowsPerPage, currentPage } = this.state;
+
     if (!values) {
       return <CircularProgress key="loading" id="spinner" />;
     }
@@ -116,16 +101,7 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
       switch (col.type) {
 
         case 'icon':
-          return !col.tooltip ? <FontIcon style={style}>{col.value || value[col.field]}</FontIcon> : (
-              <Button 
-                icon 
-                tooltipLabel={value[col.tooltip] || col.tooltip} 
-                tooltipPosition={col.tooltipPosition || 'top'}
-                className={this.fixClassName(value[col.field]) + ' tooltip'}
-              >
-                {col.value || value[col.field]}
-              </Button>
-            );
+          return <FontIcon style={style}>{col.value || value[col.field]}</FontIcon>;
 
         case 'button':
           return (
@@ -170,7 +146,7 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
         {
           cols.map((col, ci) => (
             <TableColumn key={ci} className={this.fixClassName(col.field || col.value)}>
-              <span className="indicator" />{renderColumn(col, value)}
+              {renderColumn(col, value)}
             </TableColumn>
           ))
         }
@@ -181,8 +157,8 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
     className += compact ? 'table-compact' : '';
 
     return (
-      <Card className={hideBorders ? 'hide-borders' : ''} style={styles.autoscroll}>
-        <DataTable plain={!checkboxes} data={checkboxes} className={className} baseId="pagination" responsive={false}>
+      <Card className={hideBorders ? 'hide-borders' : ''}>
+        <DataTable plain={!checkboxes} data={checkboxes} className={className} baseId="pagination">
           <TableHeader>
             <TableRow>
               {cols.map((col, i) => (
@@ -206,7 +182,6 @@ export default class Table extends GenericComponent<ITableProps, ITableState> {
               onPagination={this.handlePagination}
               rows={totalRows}
               rowsPerPage={rowsPerPage}
-              rowsPerPageItems={rowsPerPageItems}
               page={currentPage}
             />
           ) : null

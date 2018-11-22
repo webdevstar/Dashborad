@@ -2,27 +2,28 @@
 import * as _ from 'lodash';
 import {DataSourcePlugin, IOptions} from './DataSourcePlugin';
 
-interface ISampleParams {
-  samples: IDictionary;
+interface IConstantParams {
+  values: Array<string>;
+  selectedValue: string;
 }
 
-export default class Sample extends DataSourcePlugin<ISampleParams> {
+export default class Constant extends DataSourcePlugin<IConstantParams> {
 
   type = 'Constant';
   defaultProperty = 'selectedValue';
 
-  constructor(options: IOptions<ISampleParams>, connections: IDict<IStringDictionary>) {
+  constructor(options: IOptions<IConstantParams>, connections: IDict<IStringDictionary>) {
     super(options, connections);
 
     var props = this._props;
     var params = options.params;
 
-    props.actions.push.apply(props.actions, [ 'initialize' ]);
+    props.actions.push.apply(props.actions, [ 'initialize', 'updateSelectedValue', 'updateSelectedValues' ]);
   }
 
   initialize() {
-    let { samples } = <any> this._props.params;
-    return samples || {};
+    var { selectedValue, values } = <any> this._props.params;
+    return { selectedValue, values };
   }
 
   /**
@@ -38,11 +39,11 @@ export default class Sample extends DataSourcePlugin<ISampleParams> {
     return result;
   }
 
+  updateSelectedValue(dependencies: IDictionary, selectedValue: any) {
+    return { selectedValue };
+  }
+
   updateSelectedValues(dependencies: IDictionary, selectedValues: any) {
-    if (Array.isArray(selectedValues)) {
-      return _.extend(dependencies, { 'selectedValues': selectedValues });
-    } else {
-      return _.extend(dependencies, { ... selectedValues });
-    }
+    return { selectedValues };
   }
 }

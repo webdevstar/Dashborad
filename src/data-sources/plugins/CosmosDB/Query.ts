@@ -30,7 +30,7 @@ export default class CosmosDBQuery extends DataSourcePlugin<IQueryParams> {
    * @param {object} dependencies
    * @param {function} callback
    */
-  dependenciesUpdated(dependencies: any) {
+  updateDependencies(dependencies: any) {
     let emptyDependency = false;
     Object.keys(this._props.dependencies).forEach((key) => {
       if (typeof dependencies[key] === 'undefined') { emptyDependency = true; }
@@ -115,7 +115,7 @@ export default class CosmosDBQuery extends DataSourcePlugin<IQueryParams> {
 
   // Helper methods to strip dollar sign from JSON key names 
   private remap(json: any) {
-    if (json !== null && typeof json === 'object') {
+    if (typeof json === 'object') {
       return this.remapObject(json);
     } else if (Array.isArray(json)) {
       return this.remapArray(json);

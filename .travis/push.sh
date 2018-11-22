@@ -34,7 +34,7 @@ ensure_preconditions_met() {
 }
 
 create_production_build() {
-  yarn build
+  CI="" yarn build
 }
 
 setup_git() {
