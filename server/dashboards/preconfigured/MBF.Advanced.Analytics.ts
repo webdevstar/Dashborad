@@ -8,8 +8,8 @@ export const config: IDashboardConfig = /*return*/ {
   icon: "equalizer",
   url: "mbf_advanced_analytics",
   description: "Bot Framework Advanced Analytics Dashboard",
-  preview: "/images/bot-framework-preview.png",
-  html: ``,
+  preview: "/images/default.png",
+  html: `POC - Additional info will be added in the future`,
   config: {
     connections: { },
     layout: {
@@ -55,7 +55,7 @@ export const config: IDashboardConfig = /*return*/ {
       type: "ApplicationInsights/Query",
       dependencies: { timespan: "timespan",queryTimespan: "timespan:queryTimespan",granularity: "timespan:granularity" },
       params: {
-        table: "telemetry_import_2_CL",
+        table: "nflbot_CL",
         queries: {
           filterChannels: {
             query: () => `
@@ -113,7 +113,7 @@ export const config: IDashboardConfig = /*return*/ {
         selectedIntents: "filters:intents-selected"
       },
       params: {
-        table: "telemetry_import_2_CL",
+        table: "nflbot_CL",
         queries: {
           queries_per_session: {
             query: () => `
@@ -476,7 +476,7 @@ export const config: IDashboardConfig = /*return*/ {
           type: "ApplicationInsights/Query",
           dependencies: { intent: "dialog_intentsDialog:intent",queryTimespan: "dialog_intentsDialog:queryspan" },
           params: {
-            table: "telemetry_import_2_CL",
+            table: "nflbot_CL",
             queries: {
               "total-conversations": {
                 query: ({ intent }) => `
@@ -733,7 +733,7 @@ export const config: IDashboardConfig = /*return*/ {
           type: "ApplicationInsights/Query",
           dependencies: { intent: "dialog_conversations:intent",queryTimespan: "dialog_conversations:queryspan" },
           params: {
-            table: "telemetry_import_2_CL",
+            table: "nflbot_CL",
             queries: {
               conversations: {
                 query: ({ intent }) => `
@@ -782,7 +782,7 @@ export const config: IDashboardConfig = /*return*/ {
           dependencies: { conversation: "dialog_messages:conversation",queryTimespan: "dialog_messages:queryspan" },
           params: {
             query: ({ conversation }) => `
-              telemetry_import_2_CL
+              nflbot_CL
               | where recordType in ("intent", "response") and (intentText != '' or responseText != '')
               | order by timestamp asc
               | extend message=strcat(responseText, intentText)

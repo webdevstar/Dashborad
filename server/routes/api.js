@@ -117,7 +117,6 @@ router.get('/dashboards/:id*', (req, res) => {
 
   let script = '';
   let dashboardFile = getFileById(privateDashboard, dashboardId);
-
   if (dashboardFile) {
     let filePath = path.join(privateDashboard, dashboardFile);
     if (isValidFile(filePath)) {
@@ -141,7 +140,7 @@ router.get('/dashboards/:id*', (req, res) => {
 router.post('/dashboards/:id', (req, res) => {
   let { id } = req.params;
   let { script } = req.body || '';
-
+  
   const { privateDashboard } = paths();
   let dashboardFile = getFileById(privateDashboard, id);
   let filePath = path.join(privateDashboard, dashboardFile);
@@ -207,33 +206,50 @@ router.put('/dashboards/:id', (req, res) => {
   });
 });
 
+router.delete('/dashboards/:id', (req, res) => {
+  try {
+    let { id } = req.params;
+
+    const { privateDashboard } = paths();
+    let dashboardPath = path.join(privateDashboard, id + '.private.js');
+    let dashboardExists = fs.existsSync(dashboardPath);
+
+    if (!dashboardExists) {
+      return res.json({ errors: ['Could not find a Dashboard with the given id or filename'] });
+    }
+
+    fs.unlink(dashboardPath, err => {
+      if (err) {
+        console.error(err);
+        return res.end(err);
+      }
+
+      res.json({ ok: true });
+    });
+  }
+  catch (ex) {
+    res.json({ ok: false });
+  }
+});
+
 function getFileById(dir, id) {
   let files = fs.readdirSync(dir) || [];
-
+  
   // Make sure the array only contains files
   files = files.filter(fileName => fs.statSync(path.join(dir, fileName)).isFile());
-
   let dashboardFile = null;
   if (files.length) { 
+    files.forEach(fileName => {
+      let filePath = path.join(dir, fileName);
 
-    let dashboardIndex = parseInt(id);
-    if (!isNaN(dashboardIndex) && files.length > dashboardIndex) {
-      dashboardFile = files[dashboardIndex];
-    }
-
-    if (!dashboardFile) {
-      files.forEach(fileName => {
-        let filePath = path.join(dir, fileName);
-
-        if (isValidFile(filePath)) {
-          const fileContents = getFileContents(filePath);
-          const dashboardId = getField(fields.id, fileContents);
-          if (dashboardId === id) {
-            dashboardFile = fileName;
-          }
+      if (isValidFile(filePath)) {
+        const fileContents = getFileContents(filePath);
+        const dashboardId = getField(fields.id, fileContents);
+        if (dashboardId === id) {
+          dashboardFile = fileName;
         }
-      });
-    }
+      }
+    });
   }
 
   return dashboardFile;
@@ -287,20 +303,6 @@ router.post('/setup', (req, res) => {
     }
 
     res.end(content);
-  })
-});
-
-router.post('/import/dashboards', (req, res) => {
-  var content = (req.body && req.body.json) || '';
-  var lowerCaseFileName = req.body.dashboardFileName.toLowerCase();
-
-  var modifiedFileName = lowerCaseFileName + '.private.js'
-  fs.writeFile(path.join(__dirname, '..', 'dashboards', modifiedFileName), req.body.content, err => {
-    if (err) {
-      console.error(err);
-      return res.end(err);
-    }
-    res.send({ res: 'Dashboard imported successfully' });
   })
 });
 

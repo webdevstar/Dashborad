@@ -175,6 +175,12 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
   }
 
   onDeleteDashboardApprove() {
+    let { dashboard } = this.props;
+    if (!dashboard) {
+      console.warn('Dashboard not found. Aborting delete.');
+    }
+    ConfigurationsActions.deleteDashboard(dashboard.id);
+    window.location.href = '/';
     this.setState({ askDelete: false });
   }
 
@@ -211,7 +217,9 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
     let { dashboard } = this.props;
     dashboard.config.layout.layouts = dashboard.config.layout.layouts || {};
     let stringDashboard = ConfigurationsActions.convertDashboardToString(dashboard);
-    downloadBlob('return ' + dashboard, 'application/json', dashboard.id.replace(' ','_') + '.private.js');
+    var dashboardName = dashboard.id.replace(/  +/g, ' ');
+    dashboardName = dashboard.id.replace(/  +/g, '_');
+    downloadBlob('return ' + stringDashboard, 'application/json', dashboardName + '.private.js');
   }
 
   onCloseExport(event: any) {
@@ -397,7 +405,7 @@ export default class Dashboard extends React.Component<IDashboardProps, IDashboa
         <Dialog
           id="speedBoost"
           visible={askDelete}
-          title="Use Google's location service?"
+          title="Are you sure?"
           aria-labelledby="speedBoostDescription"
           modal
           actions={[

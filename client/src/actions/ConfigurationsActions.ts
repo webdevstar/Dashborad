@@ -8,8 +8,9 @@ interface IConfigurationsActions {
   loadTemplate(id: string): any;
   saveConfiguration(dashboard: IDashboardConfig): any;
   failure(error: any): void;
-  submitDashboardFile(content:string, fileName:string): void;
+  submitDashboardFile(content: string, fileName: string): void;
   convertDashboardToString(dashboard: IDashboardConfig): string;
+  deleteDashboard(id: string): any;
 }
 
 class ConfigurationsActions extends AbstractActions implements IConfigurationsActions {
@@ -24,28 +25,27 @@ class ConfigurationsActions extends AbstractActions implements IConfigurationsAc
       var idRegExPattern = /id: \".*\",/i;
       var urlRegExPatternt = /url: \".*\",/i;
       var updatedContent =
-        content.replace(idRegExPattern, "id: \"" + dashboardId + "\",")
-          .replace(urlRegExPatternt, "url: \"" + dashboardId + "\",")
+        content.replace(idRegExPattern, 'id: \"' + dashboardId + '\",')
+          .replace(urlRegExPatternt, 'url: \"' + dashboardId + '\",');
 
-      request('/api/import/dashboards', {
-        method: 'POST',
-        json: true,
-        body: { content: updatedContent, dashboardFileName: dashboardId }
-      },
+      request(
+        '/api/dashboards/' + dashboardId,
+        {
+          method: 'PUT',
+          json: true,
+          body: { script: updatedContent }
+        },
         (error: any, json: any) => {
-
           if (error || (json && json.errors)) {
             return this.failure(error || json.errors);
           }
-
           // redirect to the newly imported dashboard
           window.location.replace('dashboard/' + dashboardId);
           return dispatcher(json);
         }
-
       );
     };
-  };
+  }
 
   loadConfiguration() {
     
@@ -142,12 +142,29 @@ class ConfigurationsActions extends AbstractActions implements IConfigurationsAc
     };    
   }
 
-  convertDashboardToString(dashboard: IDashboardConfig){
+  convertDashboardToString(dashboard: IDashboardConfig) {
     return this.objectToString(dashboard);
   }
 
   failure(error: any) {
     return { error };
+  }
+
+  deleteDashboard(id: string) {
+    return (dispatcher: (result: any) => any) => {
+      request('/api/dashboards/' + id, {
+        method: 'DELETE',
+        json: true
+      }, 
+              (error: any, json: any) => {
+          if (error || (json && json.errors)) {
+            return this.failure(error || json.errors);
+          }
+
+          return dispatcher(json.ok);
+        }
+      );
+    };
   }
 
   private getScript(source: string, callback?: () => void): boolean {
@@ -173,7 +190,6 @@ class ConfigurationsActions extends AbstractActions implements IConfigurationsAc
     script.src = source;
     return true;
   }
-
 
   /**
    * Convret a json object with functions to string
