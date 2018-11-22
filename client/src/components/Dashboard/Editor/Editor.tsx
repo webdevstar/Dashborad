@@ -98,7 +98,7 @@ export default class Editor extends React.PureComponent<IEditorProps, IEditorSta
       this.toast('Browser not supported');
       return;
     }
-    const value = this.aceEditor['editor'].getValue();
+    const {value} = this.state;
     const input = document.createElement('input');
     input.style.position = 'fixed';
     input.style.opacity = '0';
@@ -236,8 +236,8 @@ export default class Editor extends React.PureComponent<IEditorProps, IEditorSta
     if (!this.isEditor || !this.originalValue) {
       return false;
     }
-    const newValue = this.aceEditor['editor'].getValue();
-    return (this.originalValue !== newValue);
+    const {value} = this.state;
+    return (this.originalValue !== value);
   }
 
   private isLintPassed(): boolean {
@@ -247,8 +247,8 @@ export default class Editor extends React.PureComponent<IEditorProps, IEditorSta
 
   private save() {
     const {dashboard} = this.props;
-    const newValue = this.aceEditor['editor'].getValue();
-    const objectString = newValue.replace(/(^\s*return\s*)|(\s*$)/g, '');
+    const {value} = this.state;
+    const objectString = value.replace(/(^\s*return\s*)|(\s*$)/g, '');
     let newDashboard: IDashboardConfig = null;
     
     try {
