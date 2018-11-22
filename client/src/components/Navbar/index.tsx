@@ -55,7 +55,7 @@ export default class Navbar extends React.Component<any, any> {
           if (!window['dashboardTemplates']) {
             this.setState({ noTemplates: true });
           }
-        },
+        }, 
         5000
       );
     }
@@ -63,7 +63,6 @@ export default class Navbar extends React.Component<any, any> {
 
   render() {
     let { dashboards, noTemplates } = this.state;
-   
     let { children, title } = this.props;
     let pathname = '/';
     try { pathname = window.location.pathname; } catch (e) { }
@@ -134,13 +133,12 @@ export default class Navbar extends React.Component<any, any> {
 
     const toolbarActions = [(
       <Button
-        icon
-        tooltipLabel="Create Dashboard"
-        href="/"
-        component={Link}
+          icon 
+          tooltipLabel="Create Dashboard"
+          href="/"
+          component={Link}
       >add_box
-      </Button>),
-      , (
+      </Button>), (
       <MenuButton
         id="vert-menu"
         icon
@@ -170,7 +168,7 @@ export default class Navbar extends React.Component<any, any> {
           leftIcon={<FontIcon>lock</FontIcon>}
         />
       </MenuButton>
-    )];
+      )];
 
     if (noTemplates && !dashboards && window.location.pathname !== '/setup') {
       children = (
