@@ -14,7 +14,7 @@ interface IQueryTesterState {
   query: string;
   response: object;
   loadingData: boolean;
-  expandResponse: boolean;
+  responseExpanded: boolean;
 }
 
 interface IQueryTesterProps {
@@ -23,6 +23,15 @@ interface IQueryTesterProps {
   buttonStyle: any;
 }
 
+const styles = {
+  json: { 
+    overflowY: 'scroll', 
+    height: 'calc(100% - 200px)', 
+    width: 'calc(100% - 48px)', 
+    position: 'absolute' 
+  }
+};
+
 export default class QueryTester extends React.Component<IQueryTesterProps, IQueryTesterState> {
 
   state: IQueryTesterState = {
@@ -30,7 +39,7 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
     query: '',
     response: {},
     loadingData: false,
-    expandResponse: true
+    responseExpanded: true
   };
   
   constructor(props: any) {
@@ -53,11 +62,11 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
   }
 
   collapseResponse() {
-    this.setState({ expandResponse: false });
+    this.setState({ responseExpanded: false });
   }
 
   expandResponse() {
-    this.setState({ expandResponse: true });
+    this.setState({ responseExpanded: true });
   }
 
   submitQuery() {
@@ -78,14 +87,14 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
   }
 
   render() {
-    let { showDialog, query, response, loadingData, expandResponse } = this.state;
+    let { showDialog, query, response, loadingData, responseExpanded } = this.state;
 
     const dialogActions = [
             { onClick: this.submitQuery, primary: true, label: 'Run query' },
             { onClick: this.collapseResponse, primary: false, label: 'Collapse', 
-            disabled: _.isEmpty(response) || !expandResponse ? true : false}, 
+            disabled: _.isEmpty(response) || !responseExpanded}, 
             { onClick: this.expandResponse, primary: false, label: 'Expand',
-           disabled: _.isEmpty(response) || expandResponse ? true : false}, 
+           disabled: _.isEmpty(response) || responseExpanded}, 
             { onClick: this.closeDialog, primary: false, label: 'Close'}
           ];
     
@@ -97,8 +106,7 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
           visible={showDialog} 
           onHide={this.closeDialog} 
           dialogStyle={{ width: '60%', height: '90%' }}
-          disableScrollLocking={true}
-          renderNode={document.getElementById('settingsForm')}   
+          style={{ zIndex: 99 }}
           title="Query tester"
           actions= {dialogActions}
         >
@@ -111,22 +119,17 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
             onChange={this.onQueryChange}
           />
           <Divider />
-          <div style={{overflowY: 'scroll', height: '75%', width: '100%', position: 'absolute'}}>
-            <JSONTree data={response} theme="default" shouldExpandNode={() => expandResponse}/>
+          <div style={styles.json}>
+            <JSONTree data={response} theme="default" shouldExpandNode={() => responseExpanded}/>
           </div>
-          <div 
-            style={
-              { 
-                width: '100%', 
-                position: 'absolute', 
-                top: 130, 
-                left: 0, 
-                display: loadingData ? 'block' : 'none'
-              }
-            }
-          >
-            <CircularProgress id="testerProgress" />
-          </div>
+          {
+            loadingData && 
+            (
+              <div style={{ width: '100%', position: 'absolute', top: 130, left: 0 }}>
+                <CircularProgress id="testerProgress" />
+              </div>
+            )
+          }
         </Dialog>  
       </div>
     );
