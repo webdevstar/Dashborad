@@ -1,0 +1,15 @@
+language:
+  node_js
+
+node_js:
+  - "7"
+
+install:
+  - .travis/setup.sh
+
+script:
+  - .travis/ci.sh
+  - .travis/coverage.sh
+
+after_success:
+  - .travis/push.sh
