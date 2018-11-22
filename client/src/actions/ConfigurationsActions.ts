@@ -8,12 +8,44 @@ interface IConfigurationsActions {
   loadTemplate(id: string): any;
   saveConfiguration(dashboard: IDashboardConfig): any;
   failure(error: any): void;
+  submitDashboardFile(content:string, fileName:string): void;
+  convertDashboardToString(dashboard: IDashboardConfig): string;
 }
 
 class ConfigurationsActions extends AbstractActions implements IConfigurationsActions {
   constructor(alt: AltJS.Alt) {
     super(alt);
   }
+
+  submitDashboardFile = (content, dashboardId) => {
+    return (dispatcher: (json: any) => void) => {
+
+      // Replace both 'id' and 'url' with the requested id from the user
+      var idRegExPattern = /id: \".*\",/i;
+      var urlRegExPatternt = /url: \".*\",/i;
+      var updatedContent =
+        content.replace(idRegExPattern, "id: \"" + dashboardId + "\",")
+          .replace(urlRegExPatternt, "url: \"" + dashboardId + "\",")
+
+      request('/api/import/dashboards', {
+        method: 'POST',
+        json: true,
+        body: { content: updatedContent, dashboardFileName: dashboardId }
+      },
+        (error: any, json: any) => {
+
+          if (error || (json && json.errors)) {
+            return this.failure(error || json.errors);
+          }
+
+          // redirect to the newly imported dashboard
+          window.location.replace('dashboard/' + dashboardId);
+          return dispatcher(json);
+        }
+
+      );
+    };
+  };
 
   loadConfiguration() {
     
@@ -110,6 +142,10 @@ class ConfigurationsActions extends AbstractActions implements IConfigurationsAc
     };    
   }
 
+  convertDashboardToString(dashboard: IDashboardConfig){
+    return this.objectToString(dashboard);
+  }
+
   failure(error: any) {
     return { error };
   }
@@ -137,6 +173,7 @@ class ConfigurationsActions extends AbstractActions implements IConfigurationsAc
     script.src = source;
     return true;
   }
+
 
   /**
    * Convret a json object with functions to string
