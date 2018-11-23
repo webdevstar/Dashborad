@@ -22,6 +22,7 @@ const fields = {
   logo: /\s*logo:\s*("|')(.*)("|')/,
   url: /\s*url:\s*("|')(.*)("|')/,
   preview: /\s*preview:\s*("|')(.*)("|')/,
+  category: /\s*category:\s*("|')(.*)("|')/,
   html: /\s*html:\s*(`)([\s\S]*?)(`)/gm
 }
 
@@ -208,6 +209,32 @@ router.put('/dashboards/:id', (req, res) => {
 
     res.json({ script });
   });
+});
+
+router.delete('/dashboards/:id', (req, res) => {
+  try {
+    let { id } = req.params;
+
+    const { privateDashboard } = paths();
+    let dashboardPath = path.join(privateDashboard, id + '.private.js');
+    let dashboardExists = fs.existsSync(dashboardPath);
+
+    if (!dashboardExists) {
+      return res.json({ errors: ['Could not find a Dashboard with the given id or filename'] });
+    }
+
+    fs.unlink(dashboardPath, err => {
+      if (err) {
+        console.error(err);
+        return res.end(err);
+      }
+
+      res.json({ ok: true });
+    });
+  }
+  catch (ex) {
+    res.json({ ok: false });
+  }
 });
 
 function getFileById(dir, id, overwrite) {
