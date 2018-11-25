@@ -43,6 +43,7 @@ export const config: IDashboardConfig = /*return*/ {
       </p>
     </div>
   `,
+  category: 'Bots - Advanced',
   config: {
     connections: {
       'bot-framework': {
@@ -207,7 +208,9 @@ export const config: IDashboardConfig = /*return*/ {
               const totalMessages = totalBot + totalAgent;
               // Timeline 
               const { timespan } = dependencies;
-              const keys = [...new Set(results.reduce((a, c) => { a.push(c.stateLabel); return a; }, []))];
+              const keys = results.reduce((keyArray, currentValue) => { 
+                return keyArray.includes(currentValue.stateLabel) ? keyArray : [...keyArray, currentValue.stateLabel]
+              }, []);
               const timestampKey = 'time'; // NB: required key name for timeline component
               // group by timestamp
               const graphData = results.reduce((a, c) => {
