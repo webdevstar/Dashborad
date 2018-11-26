@@ -1,4 +1,4 @@
-# React Dashboard
+# Dashboard
 
 
 React-dashboard is a dashboarding application that enables building dashboard and templates.
