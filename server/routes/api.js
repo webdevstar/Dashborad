@@ -22,7 +22,6 @@ const fields = {
   logo: /\s*logo:\s*("|')(.*)("|')/,
   url: /\s*url:\s*("|')(.*)("|')/,
   preview: /\s*preview:\s*("|')(.*)("|')/,
-  category: /\s*category:\s*("|')(.*)("|')/,
   html: /\s*html:\s*(`)([\s\S]*?)(`)/gm
 }
 

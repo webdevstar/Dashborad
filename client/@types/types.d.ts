@@ -67,7 +67,6 @@ interface IDashboardConfig extends IDataSourceContainer, IElementsContainer {
   description?: string,
   html?: string,
   preview?: string,
-  category?: string,
   config: {
     connections: IConnections,
     layout: {

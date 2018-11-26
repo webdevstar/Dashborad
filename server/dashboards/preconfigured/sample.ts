@@ -15,7 +15,6 @@ export const config: IDashboardConfig = /*return*/ {
       can be manipulated and connected to visual components.
     </div>
   `,
-  category: 'Samples',
   config: {
     connections: {},
     layout: {
