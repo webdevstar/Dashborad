@@ -1,8 +1,9 @@
+import * as _ from 'lodash';
 import * as request from 'xhr-request';
 import { DataSourcePlugin, IOptions } from '../DataSourcePlugin';
 import { appInsightsUri } from './common';
 import ApplicationInsightsConnection from '../../connections/application-insights';
-import { DataSourceConnector } from '../../DataSourceConnector';
+import { DataSourceConnector, IDataSource } from '../../DataSourceConnector';
 import * as formats from '../../../utils/data-formats';
 
 let connectionType = new ApplicationInsightsConnection();
@@ -147,8 +148,8 @@ export default class ApplicationInsightsQuery extends DataSourcePlugin<IQueryPar
             // Extract data formats
             let format = queries[aTable].format;
             if (format && typeof format !== 'string') {
-              if (!format.args) { format.args = {}; }
-              if (!format.args.prefix) { format.args.prefix = aTable; }
+              format = _.extend({ args: {} }, format);
+              format.args = _.extend({ prefix: aTable }, format.args);
             }
             let result = { values: returnedResults[aTable] };
             let formatExtract = DataSourceConnector.handleDataFormat(format, this, result, dependencies);
@@ -176,6 +177,23 @@ export default class ApplicationInsightsQuery extends DataSourcePlugin<IQueryPar
     } else {
       return Object.assign(dependencies, { ... selectedValues });
     }
+  }
+
+  getElementQuery(dataSource: IDataSource, dependencies: IDict<any>, partialQuery: string, queryFilters: any): string {
+    let timespan = '30d';
+    const table = dataSource && dataSource['config'] && dataSource['config'].params && 
+      dataSource['config'].params.table || null;
+    if (dependencies && dependencies['timespan'] && dependencies['timespan']['queryTimespan']) {
+      timespan = dependencies['timespan']['queryTimespan'];
+      timespan = this.convertApplicationInsightsTimespan(timespan);
+    } else if (dependencies && dependencies['queryTimespan']) {
+      // handle dialog params
+      timespan = dependencies['queryTimespan'];
+      timespan = this.convertApplicationInsightsTimespan(timespan);
+    }
+    const filter = this.formatApplicationInsightsFilterString(queryFilters, dependencies);
+    const query = this.formatApplicationInsightsQueryString(partialQuery, timespan, filter, table);
+    return query;
   }
 
   private mapAllTables(results: IQueryResults, mappings: Array<IDictionary>): any[][] {
@@ -273,4 +291,51 @@ export default class ApplicationInsightsQuery extends DataSourcePlugin<IQueryPar
       throw new Error('{ table, queries } should be of types { "string", { query1: {...}, query2: {...} }  }.');
     }
   }
+
+  // element export formatting functions
+  private formatApplicationInsightsQueryString(query: string, timespan: string, filter: string, table?: string) {
+    let str = query.replace(/(\|)((\s??\n\s??)(.+?))/gm, '\n| $4'); // move '|' to start of each line
+    str = str.replace(/(\s?\|\s?)([^\|])/gim, '\n| $2'); // newline on '|'
+    str = str.replace(/(\sand\s)/gm, '\n $1'); // newline on 'and'
+    str = str.replace(/([^\(\'\"])(,\s*)(?=(\w+[^\)\'\"]\w+))/gim, '$1,\n  '); // newline on ','
+    const timespanQuery = '| where timestamp > ago(' + timespan + ') \n';
+    // Checks for '|' at start
+    const matches = str.match(/^(\s*\||\s*\w+\s*\|)/ig); 
+    const start = (!matches || matches.length !== 1) ? '| ' : '';
+    if (table) {
+      str = table + ' \n' + timespanQuery + filter + start + str;
+    } else {
+      // Insert timespan and filter after table name
+      str = str.replace(/^\s*(\w+)\s*/gi, '$1 \n' + timespanQuery + filter + start); 
+    }
+    return str;
+  }
+
+  private formatApplicationInsightsFilterString(filters: IStringDictionary[], dependencies: IDict<any>) {
+    let str = '';
+    if (!filters) {
+      return str;
+    }
+    // Apply selected filters to connected query
+    filters.forEach((filter) => {
+      const { dependency, queryProperty } = filter;
+      const selectedFilters: string[] = dependencies[dependency] || [];
+      if (selectedFilters.length > 0) {
+        const f = '| where ' + selectedFilters.map((value) => `${queryProperty}=="${value}"`).join(' or ');
+        str = `${str}${f} \n`;
+      }
+    });
+    return str;
+  }
+
+  private convertApplicationInsightsTimespan(timespan: string) {
+    let str = timespan;
+    if (timespan.substr(0, 2) === 'PT') {
+      str = str.substring(2).toLowerCase();
+    } else if (timespan.substr(0, 1) === 'P') {
+      str = str.substring(1).toLowerCase();
+    }
+    return str;
+  }
+
 }

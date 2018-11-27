@@ -1,4 +1,5 @@
 import * as _ from 'lodash';
+import utils from './index';
 import { IDataSourcePlugin } from '../data-sources/plugins/DataSourcePlugin';
 
 export enum DataFormatTypes {
@@ -23,6 +24,8 @@ export function timespan(
 
   if (!state) { return null; }
 
+  const params = plugin.getParams();
+  let prefix = (typeof format !== 'string' && format.args && format.args.prefix) || plugin._props.id;
   let queryTimespan =
     state.selectedValue === '24 hours' ? 'PT24H' :
     state.selectedValue === '1 week' ? 'P7D' :
@@ -33,7 +36,14 @@ export function timespan(
     state.selectedValue === '24 hours' ? '5m' :
     state.selectedValue === '1 week' ? '1d' : '1d';
 
-  return { queryTimespan, granularity };
+  let result = { 
+    queryTimespan, 
+    granularity 
+  };
+  result[prefix + '-values'] = params.values;
+  result[prefix + '-selected'] = state.selectedValue;
+
+  return result;
 }
 
 export function flags(
@@ -47,8 +57,13 @@ export function flags(
 
   if (!state || !params || !Array.isArray(params.values)) { return null; }
 
+  let prefix = (typeof format !== 'string' && format.args && format.args.prefix) || plugin._props.id;
   let flags = {};
   params.values.forEach(key => { flags[key] = state.selectedValue === key; });
+
+  flags[prefix + '-values'] = params.values;
+  flags[prefix + '-selected'] = state.selectedValue;
+
   return flags;
 }
 
@@ -60,36 +75,47 @@ export function scorecard (
   prevState: any) {
   let { values } = state;
 
-  let args = typeof format !== 'string' && format.args || { thresholds: null };
-  let countField = args.countField || 'count';
-  let checkValue = (values && values[0] && values[0][countField]) || 0;
+  const args = typeof format !== 'string' && format.args || { thresholds: null };
+  const countField = args.countField || 'count';
+  const postfix = args.postfix || null;
+  let checkValue = (values && values[0] && values[0][countField]) || 0; 
   
-  let createScoreValue = (value: any, color: string, icon: string, subvalue?: any, subheading?: string) => {
+  let createValue = (value: any, heading: string, color: string, icon: string, subvalue?: any, subheading?: string) => {
     let item = {};
     let prefix = args && args.prefix || plugin._props.id;
-    item[prefix + '_value'] = value;
-    item[prefix + '_color'] = color;
-    item[prefix + '_icon'] = icon;
-    item[prefix + '_subvalue'] = subvalue || "";
-    item[prefix + '_subheading'] = subheading || "";
+    item[prefix + '-value'] = utils.kmNumber(value, postfix);
+    item[prefix + '-heading'] = heading;
+    item[prefix + '-color'] = color;
+    item[prefix + '-icon'] = icon;
+    item[prefix + '-subvalue'] = subvalue || '';
+    item[prefix + '-subheading'] = subheading || '';
     return item;
   };
 
   let thresholds = args.thresholds || [ ];
-  if (!thresholds.length) { thresholds.push({ value: checkValue, color: '#000', icon: 'done' }) }
+  if (!thresholds.length) { 
+    thresholds.push({ value: checkValue, heading: '', color: '#000', icon: 'done' });
+  }
   let firstThreshold = thresholds[0];
 
   if (!values || !values.length) { 
-    return createScoreValue(firstThreshold.value, firstThreshold.color, firstThreshold.icon);
+    return createValue(
+      firstThreshold.value, 
+      firstThreshold.heading, 
+      firstThreshold.color, 
+      firstThreshold.icon
+    );  
   }
 
   // Todo: check validity of thresholds and each value
 
   let thresholdIdx = 0;
-  let threshold = thresholds[thresholdIdx++];
+  let threshold = thresholds[thresholdIdx];
   
-  while (checkValue < threshold.value && thresholds.length > thresholdIdx) {
-    threshold = thresholds[thresholdIdx++];      
+  while (thresholds.length > (thresholdIdx + 1) && 
+         checkValue > threshold.value &&    
+         checkValue >= thresholds[++thresholdIdx].value) {
+    threshold = thresholds[thresholdIdx];      
   }
 
   let subvalue = null;
@@ -98,21 +124,23 @@ export function scorecard (
     let subvalueField = args.subvalueField || null;
     let subvalueThresholds = args.subvalueThresholds || [];
 
-    if (subvalueThresholds.length) { thresholds.push({ value: 0, subheading: '' }) }
+    if (!subvalueThresholds.length) { subvalueThresholds.push({ subvalue: 0, subheading: '' }); }
     
     checkValue = values[0][subvalueField || countField] || 0;
     thresholdIdx = 0;
-    let subvalueThreshold = subvalueThresholds[thresholdIdx++];
+    let subvalueThreshold = subvalueThresholds[thresholdIdx];
     
-    while (checkValue < subvalueThreshold.value && subvalueThresholds.length > thresholdIdx) {
-      subvalueThreshold = subvalueThresholds[thresholdIdx++];      
+    while (subvalueThresholds.length > (thresholdIdx + 1) && 
+           checkValue > subvalueThreshold.value &&
+           checkValue >= subvalueThresholds[++thresholdIdx].value) {
+      subvalueThreshold = subvalueThresholds[thresholdIdx];      
     }
 
     subvalue = checkValue;
     subheading = subvalueThreshold.subheading;
   }
 
-  return createScoreValue(checkValue, threshold.color, threshold.icon, subvalue, subheading);
+  return createValue(checkValue, threshold.heading, threshold.color, threshold.icon, subvalue, subheading);
 }
 
 /**
@@ -289,7 +317,7 @@ export function filter (
   }
 
   let result = {};
-  result[prefix + '-filters'] = filters;
+  result[prefix + '-values'] = filters;
   result[prefix + '-selected'] = selectedValues;
 
   return result;
@@ -391,11 +419,55 @@ export function bars(
   if (!format || typeof format === 'string') { return null; }
   
   const args = format.args || {};
-  let prefix = args.prefix || 'prefix';
-  let valueField = args.valueField || 'value';
+  const prefix = args.prefix || 'prefix';
+  const valueField = args.valueField || 'count';
+  const barsField = args.barsField || null;
+  const seriesField = args.seriesField || null;
+  const valueMaxLength = args.valueMaxLength && parseInt(args.valueMaxLength, 10) || 13;
+  const threshold = args.threshold || 0;
+  const othersField = args.othersField || 'Others';
+
+  let values: any[] = state.values;
+
+  // Concating values with '...'
+  if (values && values.length && valueMaxLength && (seriesField || barsField)) {
+    const cutLength = Math.max(valueMaxLength - 3, 0);
+    values.forEach(val => {
+      if (seriesField && val[seriesField] && val[seriesField].length > valueMaxLength) {
+        val[seriesField] = val[seriesField].substring(0, cutLength) + '...';
+      }
+      if (barsField && val[barsField] && val[barsField].length > valueMaxLength) {
+        val[barsField] = val[barsField].substring(0, cutLength) + '...';
+      }
+    });
+  }
 
   let result = {};
-  result[prefix + '-bars'] = [ valueField ];
+  let barValues = {};
+
+  // Setting the field describing the bars
+  if (barsField) {
+
+    let series = {};
+    values.forEach(val => {
+      barValues[val[barsField]] = barValues[val[barsField]] || { value: val[barsField] };
+
+      if (threshold && val[valueField] < threshold) {
+        barValues[val[barsField]][othersField] = (barValues[val[barsField]][othersField] || 0) + val[valueField];
+        series[othersField] = true;
+      } else {
+        barValues[val[barsField]][val[seriesField]] = val[valueField];
+        series[val[seriesField]] = true;
+      }
+    });
+
+    result[prefix + '-bars'] = _.keys(series);
+    result[prefix + '-values'] = _.values(barValues);
+
+  } else {
+    result[prefix + '-bars'] = [ valueField ];
+    result[prefix + '-values'] = values;
+  }
 
   return result;
 }
