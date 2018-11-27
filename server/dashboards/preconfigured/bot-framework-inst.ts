@@ -196,7 +196,7 @@ export const config: IDashboardConfig = /*return*/ {
 							};
 						}
 					},
-					timeline_users: {
+					users_timeline: {
 						query: (dependencies) => {
 							var { granularity } = dependencies;
 							return `
@@ -241,10 +241,10 @@ export const config: IDashboardConfig = /*return*/ {
 							});
 
 							return {
-								"timeline_users-graphData": timelineValues,
-								"timeline_users-channelUsage": channelUsage,
-								"timeline_users-timeFormat": (timespan === "24 hours" ? 'hour' : 'date'),
-								"timeline_users-channels": channels
+								"timeline-users-graphData": timelineValues,
+								"timeline-users-channelUsage": channelUsage,
+								"timeline-users-timeFormat": (timespan === "24 hours" ? 'hour' : 'date'),
+								"timeline-users-channels": channels
 							};
 						}
 					},
@@ -318,7 +318,7 @@ export const config: IDashboardConfig = /*return*/ {
 							};
 						}
 					},
-					sentiment: {
+					sentiments: {
 						query: () => `
 									where name startswith 'MBFEvent.Sentiment' | 
 									extend score=customDimensions.score| 
@@ -591,9 +591,9 @@ export const config: IDashboardConfig = /*return*/ {
 			size: { w: 5,h: 8 },
 			dependencies: {
 				visible: "modes:users",
-				values: "ai:timeline_users-graphData",
-				lines: "ai:timeline_users-channels",
-				timeFormat: "ai:timeline_users-timeFormat"
+				values: "ai:timeline-users-graphData",
+				lines: "ai:timeline-users-channels",
+				timeFormat: "ai:timeline-users-timeFormat"
 			}
 		},
 		{
@@ -606,12 +606,12 @@ export const config: IDashboardConfig = /*return*/ {
 			props: { showLegend: true,compact: true,entityType: "Messages" }
 		},
 		{
-      id: "channels",
+			id: "channels",
 			type: "PieData",
 			title: "Channel Usage (Users)",
 			subtitle: "Total users sent per channel",
 			size: { w: 3,h: 8 },
-			dependencies: { visible: "modes:users",values: "ai:timeline_users-channelUsage" },
+			dependencies: { visible: "modes:users",values: "ai:timeline-users-channelUsage" },
 			props: { showLegend: true,compact: true,entityType: "Users" }
 		},
 		{
@@ -692,7 +692,7 @@ export const config: IDashboardConfig = /*return*/ {
 			params: ["title","intent","queryspan"],
 			dataSources: [
 				{
-					id: "intentsDialog",
+					id: "intentsDialog-data",
 					type: "ApplicationInsights/Query",
 					dependencies: {
 						intent: "dialog_intentsDialog:intent",
@@ -703,7 +703,7 @@ export const config: IDashboardConfig = /*return*/ {
 					params: {
 						table: "customEvents",
 						queries: {
-							"intentTimeline": {
+							"intent-usage": {
 								query: ({ intent, granularity }) => `
                   extend intent=(customDimensions.intent)
                   | where timestamp > ago(30d) and intent =~ "${intent}"
@@ -728,13 +728,13 @@ export const config: IDashboardConfig = /*return*/ {
                   });
 
                   return {
-                    "intentTimeline-graphData": _timeline,
-                    "intentTimeline-values": ["value"],
-                    "intentTimeline-timeFormat": (timespan === "24 hours" ? 'hour' : 'date')
+                    "timeline-graphData": _timeline,
+                    "timeline-values": ["value"],
+                    "timeline-timeFormat": (timespan === "24 hours" ? 'hour' : 'date')
                   };
                 }
 							},
-							"entitiesUsage": {
+							"entities-usage": {
 								query: ({ intent }) => `
                     extend conversation=tostring(customDimensions.conversationId), 
                     entityType=tostring(customDimensions.entityType), 
@@ -757,12 +757,12 @@ export const config: IDashboardConfig = /*return*/ {
 									});
 
 									return {
-										"entitiesUsage": _.values(barResults),
-										"entitiesUsage-bars": entity_values
+										"entities-usage": _.values(barResults),
+										"entities-usage-bars": entity_values
 									};
 								}
 							},
-							"intentConversions": {
+							"total-conversations": {
 								query: ({ intent }) => `
                     extend conversation=tostring(customDimensions.conversationId), intent=customDimensions.intent |
 										where name=='MBFEvent.Intent' and intent =~ '${intent}' |
@@ -771,7 +771,7 @@ export const config: IDashboardConfig = /*return*/ {
                     `,
 								calculated: (results) => {
 									return {
-										"intentConversions-totalConversations": (results && results.length && results[0].Count) || 0
+										"total-conversations": (results && results.length && results[0].Count) || 0
 									}
 								}
 							},
@@ -937,29 +937,29 @@ export const config: IDashboardConfig = /*return*/ {
 					title: "Entity count appearances in intent",
 					subtitle: "Entity usage and count for the selected intent",
 					size: { w: 6,h: 8 },
-					dependencies: { values: "intentsDialog:entitiesUsage",bars: "intentsDialog:entitiesUsage-bars" },
+					dependencies: { values: "intentsDialog-data:entities-usage",bars: "intentsDialog-data:entities-usage-bars" },
 					props: { nameKey: "entityType" }
 				},
 				{
 					id: "utterances",
 					type: "Table",
 					size: { w: 4,h: 8 },
-					dependencies: { values: "intentsDialog:intent_utterances" },
+					dependencies: { values: "intentsDialog-data:intent_utterances" },
 					props: {
 						cols: [{ header: "Top Utterances",width: "200px",field: "text" },{ header: "Count",field: "count_utterances",type: "number" }]
 					}
 				},
 				{
-					id: "intentTimeline",
+					id: "intent-timeline",
 					type: "Timeline",
 					title: "Message Rate",
 					subtitle: "How many messages were sent per timeframe",
 					size: { w: 8,h: 8 },
 					dependencies: {
 						visible: "modes:messages",
-						values: "intentsDialog:intentTimeline-graphData",
-						lines: "intentsDialog:intentTimeline-values",
-						timeFormat: "intentsDialog:intentTimeline-timeFormat"
+						values: "intentsDialog-data:timeline-graphData",
+						lines: "intentsDialog-data:timeline-values",
+						timeFormat: "intentsDialog-data:timeline-timeFormat"
 					}
 				},
 				{
@@ -967,7 +967,7 @@ export const config: IDashboardConfig = /*return*/ {
 					type: "Scorecard",
 					size: { w: 2,h: 8 },
 					dependencies: {
-						card_conversations_value: "intentsDialog:intentConversions-totalConversations",
+						card_conversations_value: "intentsDialog-data:total-conversations",
 						card_conversations_heading: "::Conversations",
 						card_conversations_color: "::#2196F3",
 						card_conversations_icon: "::chat",

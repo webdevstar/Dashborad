@@ -31,26 +31,8 @@ export default class Area extends GenericComponent<IAreaProps, IAreaState> {
   static editor = AreaSettings;
 
   static defaultProps = {
-    isStacked: false
+    isStacked: true
   };
-
-  state = {
-    timeFormat: '',
-    values: [],
-    lines: [],
-    isStacked: this.props.isStacked
-  };
-
-  constructor(props: IAreaProps) {
-    super(props);
-
-    // apply nested props
-    if (props && props.props) {
-      if (props.props.isStacked !== undefined) {
-        this.state.isStacked = props.props.isStacked as boolean;
-      }
-    }
-  }
 
   dateFormat(time: string): string {
     return moment(time).format('MMM-DD');
@@ -61,16 +43,18 @@ export default class Area extends GenericComponent<IAreaProps, IAreaState> {
   }
 
   generateWidgets() {
-    const { isStacked } = this.state;
+    let checked = this.is('isStacked');
     return (
-      <Switch
-        id="stack"
-        name="stack"
-        label="Stack"
-        checked={isStacked}
-        defaultChecked
-        onChange={this.handleStackChange}
-      />
+      <div className="widgets">
+        <Switch
+          id="stack"
+          name="stack"
+          label="Stack"
+          checked={checked}
+          defaultChecked
+          onChange={this.handleStackChange}
+        />
+      </div>
     );
   }
 
@@ -80,18 +64,23 @@ export default class Area extends GenericComponent<IAreaProps, IAreaState> {
   }
 
   render() {
-    const { timeFormat, values, lines, isStacked } = this.state;
-    const { id, title, subtitle, theme, props } = this.props;
-    const { showLegend, areaProps } = props;
+    var { timeFormat, values, lines } = this.state;
+    var { title, subtitle, theme, props } = this.props;
+    var { showLegend, areaProps } = props;
 
-    const format = timeFormat === 'hour' ? this.hourFormat : this.dateFormat;
-    const themeColors = theme || ThemeColors;
+    var format = timeFormat === 'hour' ? this.hourFormat : this.dateFormat;
+    var themeColors = theme || ThemeColors;
 
-    const stackProps = !isStacked ? {} : { stackId : 1 };
+    // gets the 'isStacked' boolean option from state, passed props or default values (in that order).
+    var isStacked = this.is('isStacked');
+    let stackProps = {};
+    if (isStacked) {
+      stackProps['stackId'] = '1';
+    }
 
-    const widgets = this.generateWidgets();
+    var widgets = this.generateWidgets();
 
-    let fillElements = [];
+    var fillElements = [];
     if (values && values.length && lines) {
       fillElements = lines.map((line, idx) => {
         return (
@@ -108,7 +97,8 @@ export default class Area extends GenericComponent<IAreaProps, IAreaState> {
     }
 
     return (
-      <Card id={id} title={title} subtitle={subtitle} widgets={widgets}>
+      <Card title={title} subtitle={subtitle}>
+        {widgets}
         <ResponsiveContainer>
           <AreaChart
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
