@@ -43,13 +43,7 @@ import { IDataSourcePlugin } from '../../../data-sources/plugins/DataSourcePlugi
  *  ]
  * }
  * 
- * @param format 'retention' | { 
- *  type: 'retention',
- *  args: { 
- *    prefix: string - a prefix string for the exported variables (default to id).
- *    data: string - the state property holding the data (default is 'values').
- *  }
- * }
+ * @param format Plugin format parameter
  * @param state Current received state from data source
  * @param dependencies Dependencies for the plugin 
  *                     should contain "selectedTimespan" equals to 'PT24H', 'P7D' etc...
@@ -61,15 +55,12 @@ export function retention (
   dependencies: IDictionary, 
   plugin: IDataSourcePlugin, 
   prevState: any) {
-  
-  const prefix = getPrefix(format);
-  const args = typeof format !== 'string' && format.args || {};
-
-  let values = state[args.data || 'values'];
-  if (!values || !values.length) { return null; }
-
+  const { values } = state;
   const { selectedTimespan } = dependencies;
 
+  if (!values || !values.length) { return null; }
+  
+  const prefix = getPrefix(format);
   let result = {
     totalUnique: 0,
     totalUniqueUsersIn24hr: 0,

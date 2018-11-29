@@ -11,7 +11,6 @@ import { IDataSourcePlugin } from '../../../data-sources/plugins/DataSourcePlugi
  *  type: 'filtered_samples',
  *  args: {
  *    prefix: string - a prefix string for the filtered sample data (defaults to 'filtered').
- *    data: string - the state property holding the data (default is 'values').
  *  }
  * }
  * @param state Current received state from data source

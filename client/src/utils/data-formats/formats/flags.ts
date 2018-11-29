@@ -26,7 +26,6 @@ import { IDataSourcePlugin } from '../../../data-sources/plugins/DataSourcePlugi
  *  type: 'filter',
  *  args: { 
  *    prefix: string - a prefix string for the exported variables (default to id).
- *    data: string - the state property holding the data (default is 'values').
  *  }
  * }
  * @param state Current received state from data source
@@ -42,20 +41,17 @@ export function flags(
   prevState: any) {
 
   const prefix = getPrefix(format);
-  const args = typeof format !== 'string' && format.args || {};
   const params = plugin.getParams();
-
   if (!params || !Array.isArray(params.values)) {
     return formatWarn('A paramerter "values" is expected as an array on "params" in the data source', 'filter', plugin);
   }
 
   if (!state) { return null; }
 
-  let values = params[args.data || 'values'];
   let flags = {};
-  values.forEach(key => { flags[key] = state.selectedValue === key; });
+  params.values.forEach(key => { flags[key] = state.selectedValue === key; });
 
-  flags[prefix + 'values-all'] = values;
+  flags[prefix + 'values-all'] = params.values;
   flags[prefix + 'values-selected'] = state.selectedValue || [];
 
   return flags;
