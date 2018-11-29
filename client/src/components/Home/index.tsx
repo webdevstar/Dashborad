@@ -43,7 +43,6 @@ const styles = {
 
 interface IHomeState extends ISetupConfig {
   loaded?: boolean;
-  errors?: any;
   templates?: IDashboardConfig[];
   selectedTemplateId?: string;
   template?: IDashboardConfig;
@@ -69,7 +68,6 @@ export default class Home extends React.Component<any, IHomeState> {
     clientSecret: '',
     issuer: '',
     loaded: false,
-    errors: null,
 
     templates: [],
     selectedTemplateId: null,
@@ -108,17 +106,11 @@ export default class Home extends React.Component<any, IHomeState> {
     this.downloadTemplate = this.downloadTemplate.bind(this);
   }
 
-  updateConfiguration(state: {
-    templates: IDashboardConfig[],
-    template: IDashboardConfig,
-    creationState: string,
-    errors: any
-  }) {
+  updateConfiguration(state: {templates: IDashboardConfig[], template: IDashboardConfig, creationState: string}) {
     this.setState({
       templates: state.templates || [],
       template: state.template,
-      creationState: state.creationState,
-      errors: state.errors,
+      creationState: state.creationState
     });
     if (this.state.stage === 'requestDownloadTemplate') {
       this.downloadTemplate(this.state.template);
@@ -243,7 +235,7 @@ export default class Home extends React.Component<any, IHomeState> {
   }
 
   render() {
-    let { errors, loaded, redirectUrl, templates, selectedTemplateId, template } = this.state;
+    let { loaded, redirectUrl, templates, selectedTemplateId, template } = this.state;
     let { importVisible } = this.state;
     let { importedFileContent, fileName } = this.state;
     let { infoVisible, infoHtml, infoTitle } = this.state;
@@ -258,14 +250,6 @@ export default class Home extends React.Component<any, IHomeState> {
 
     if (!templates) {
       return null;
-    }
-
-    let error = false;
-    let errorText = null;
-    const isBadId = errors && errors.error && errors.error.message && errors.error.type && errors.error.type === 'id';
-    if (isBadId) {
-      errorText = errors.error.message;
-      error = true;
     }
 
     let createCard = (tmpl, index) => (
@@ -407,8 +391,6 @@ export default class Home extends React.Component<any, IHomeState> {
             defaultValue={template && template.id || ''}
             lineDirection="center"
             placeholder="Choose an ID for the dashboard (will be used in the url)"
-            error={error}
-            errorText={errorText}
           />
           <TextField
             id="name"

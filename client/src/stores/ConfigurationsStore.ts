@@ -14,7 +14,6 @@ export interface IConfigurationsStoreState {
   connections: IDictionary;
   connectionsMissing: boolean;
   loaded: boolean;
-  errors: any;
 }
 
 class ConfigurationsStore extends AbstractStoreModel<IConfigurationsStoreState> implements IConfigurationsStoreState {
@@ -27,7 +26,6 @@ class ConfigurationsStore extends AbstractStoreModel<IConfigurationsStoreState> 
   connections: IDictionary;
   connectionsMissing: boolean;
   loaded: boolean;
-  errors: any;
 
   constructor() {
     super();
@@ -40,14 +38,12 @@ class ConfigurationsStore extends AbstractStoreModel<IConfigurationsStoreState> 
     this.connections = {};
     this.connectionsMissing = false;
     this.loaded = false;
-    this.errors = null;
 
     this.bindListeners({
       loadConfiguration: configurationActions.loadConfiguration,
       loadDashboard: configurationActions.loadDashboard,
       loadTemplate: configurationActions.loadTemplate,
-      createDashboard: configurationActions.createDashboard,
-      failure: configurationActions.failure
+      createDashboard: configurationActions.createDashboard
     });
 
     configurationActions.loadConfiguration();
@@ -88,7 +84,6 @@ class ConfigurationsStore extends AbstractStoreModel<IConfigurationsStoreState> 
   }
 
   createDashboard(result: { dashboard: IDashboardConfig }) {
-    this.errors = null;
     this.creationState = 'successful';
   }
 
@@ -106,10 +101,6 @@ class ConfigurationsStore extends AbstractStoreModel<IConfigurationsStoreState> 
         return Object.keys(connection).some(paramKey => !connection[paramKey]);
       });
     }
-  }
-
-  failure(errors: any) {
-    this.errors = errors;
   }
 
   private getConnections(dashboard: IDashboardConfig): any {

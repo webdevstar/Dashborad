@@ -269,12 +269,12 @@ router.put('/templates/:id', (req, res) => {
   });
 });
 
-router.put('/dashboards/:id?', (req, res) => {
+router.put('/dashboards/:id', (req, res) => {
   let { id } = req.params || {};
   let { script } = req.body || {};
 
   if (!id || !script) {
-    return res.json({ errors: {message: 'No id or script were supplied for the new dashboard', type: 'id'}} );
+    return res.end({ error: 'No id or script were supplied for the new dashboard' });
   }
 
   const { privateDashboard } = paths();
@@ -283,7 +283,7 @@ router.put('/dashboards/:id?', (req, res) => {
   let dashboardExists = fs.existsSync(dashboardPath);
 
   if (dashboardFile || dashboardExists) {
-    return res.json({ errors: {message: 'Dashboard id or filename already exists', type: 'id'}} );
+    return res.json({ errors: ['Dashboard id or filename already exists'] });
   }
 
   fs.writeFile(dashboardPath, script, err => {
