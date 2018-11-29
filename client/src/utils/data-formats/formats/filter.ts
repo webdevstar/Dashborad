@@ -53,12 +53,14 @@ export function filter (
   // is going to be reset into an empty set.
   // For this reason, using previous state to copy filter
   const filters = values.map(x => x[field] || unknown);
+  let selectedValues = [];
+  if (prevState[prefix + 'values-selected'] !== undefined) {
+    selectedValues = prevState[prefix + 'values-selected'];
+  }
+
   let result = {};
   result[prefix + 'values-all'] = filters;
-
-  if (prevState[prefix + 'values-selected'] === undefined) {
-    result[prefix + 'values-selected'] = [];
-  }
+  result[prefix + 'values-selected'] = selectedValues;
 
   return result;
 }

@@ -1,4 +1,3 @@
-import * as _ from 'lodash';
 import { IDataSource } from '../DataSourceConnector';
 import { ToastActions } from '../../components/Toast';
 import { DataFormatTypes, IDataFormat } from '../../utils/data-formats';
@@ -143,7 +142,7 @@ export abstract class DataSourcePlugin<T> implements IDataSourcePlugin {
   }
 
   getParams(): T {
-    return _.cloneDeep(this._props.params);
+    return this._props.params;
   }
 
   getFormat(): string | IDataFormat {

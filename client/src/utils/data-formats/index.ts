@@ -6,4 +6,3 @@ export * from './formats/retention';
 export * from './formats/scorecard';
 export * from './formats/timeline';
 export * from './formats/timespan';
-export * from './formats/filtered-samples';

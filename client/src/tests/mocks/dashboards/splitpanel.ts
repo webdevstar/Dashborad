@@ -6,7 +6,17 @@ dashboard.dataSources.push(
     id: "samples",
     type: "Sample",
     params: { 
-      samples: { }
+      samples: { 
+        groups: [
+          { title: "value1", subtitle: "subvalue1", count: 60 },
+          { title: "value2", subtitle: "subvalue2", count: 60 },
+        ],
+        values: [
+          { id: "value1", count: 60 },
+          { id: "value2", count: 10 },
+          { id: "value3", count: 30 }
+        ]
+      }
     }
   }
 );
