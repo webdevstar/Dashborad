@@ -8,7 +8,7 @@ dashboard.elements.push({
   size: { w: 1, h: 1 },
   title: 'Table',
   subtitle: 'Table',
-  dependencies: { values: 'samples:table-values' },
+  dependencies: { values: 'samples:values' },
   props: {
     cols: [
       {
