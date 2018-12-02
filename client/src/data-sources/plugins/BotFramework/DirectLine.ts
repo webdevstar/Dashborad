@@ -5,7 +5,7 @@ import BotFrameworkConnection from '../../connections/bot-framework';
 
 let connectionType = new BotFrameworkConnection();
 
-export const DIRECT_LINE_URL = 'https://directline.botframework.com/v3/directline/conversations';
+const DIRECT_LINE_URL = 'https://directline.botframework.com/v3/directline/conversations';
 
 interface IQueryParams {
   calculated?: (results: any) => object;
@@ -36,7 +36,6 @@ export default class BotFrameworkDirectLine extends DataSourcePlugin<IQueryParam
     // If one of the dependencies is not supplied, do not run the query
     if (emptyDependency) {
       return (dispatch) => {
-
         return dispatch();
       };
     }
@@ -49,7 +48,9 @@ export default class BotFrameworkDirectLine extends DataSourcePlugin<IQueryParam
         return dispatch();
       };
     }
+
     const bearerToken = `Bearer ${directLine}`;
+
     return (dispatch) => {
       request(DIRECT_LINE_URL, {
         method: 'POST',

@@ -13,7 +13,6 @@ interface IQueryParams {
   collectionId?: string;
   calculated?: (results: any) => object;
 }
-export const COSMOS_DB_QUERY_URL = `/cosmosdb/query`;
 
 export default class CosmosDBQuery extends DataSourcePlugin<IQueryParams> {
   type = 'CosmosDB-Query';
@@ -49,7 +48,6 @@ export default class CosmosDBQuery extends DataSourcePlugin<IQueryParams> {
     let { host, key } = connection;
     if (!connection || !host || !key) {
       return (dispatch) => {
-
         return dispatch();
       };
     }
@@ -57,6 +55,7 @@ export default class CosmosDBQuery extends DataSourcePlugin<IQueryParams> {
     const params = this._props.params;
     const query: string = this.compileQuery(params.query, dependencies);
 
+    const url = `/cosmosdb/query`;
     const body = {
       host: host,
       key: key,
@@ -69,11 +68,11 @@ export default class CosmosDBQuery extends DataSourcePlugin<IQueryParams> {
     };
 
     return (dispatch) => {
-      request(COSMOS_DB_QUERY_URL, {
+      request(url, {
         method: 'POST',
         json: true,
         body: body,
-      },      (error, json, b) => {
+      },      (error, json) => {
         if (error) {
           throw new Error(error);
         }

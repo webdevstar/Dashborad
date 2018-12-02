@@ -4,7 +4,6 @@ import InfoDrawer from '../../components/common/InfoDrawer';
 import * as TestUtils from 'react-addons-test-utils';
 
 describe('Info drawer', () => {
-  let infoDrawer;
 
   it('check info drawer is loading', () => {
     Object.defineProperty(window, "matchMedia", {
@@ -17,7 +16,5 @@ describe('Info drawer', () => {
       buttonIcon="help"
       buttonTooltip="Click here to learn more"
       buttonLabel="instructions" />);
-    
-    TestUtils.isElementOfType(infoDrawer, 'div');
   });
 });
