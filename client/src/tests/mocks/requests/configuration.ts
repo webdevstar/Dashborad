@@ -28,17 +28,13 @@ function mockRequests() {
       })(window);
     `);
 
-  nock('http://localhost')
+    nock('http://localhost')
     .get('/api/dashboard/id')
     .reply(200, `
      
           return ${JSON.stringify(dashboard)};
       
     `);
-
-  nock('http://localhost')
-    .put('/api/dashboards/id')
-    .reply(200, { success: true });
 }
 export {
   mockRequests

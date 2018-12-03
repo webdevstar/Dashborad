@@ -1,6 +1,5 @@
 import * as React from 'react';
 import alt, { AbstractStoreModel } from '../../../alt';
-import { ToastActions } from '../../Toast';
 
 import { DataSourceConnector, IDataSourceDictionary, IDataSource } from '../../../data-sources/DataSourceConnector';
 
@@ -80,13 +79,13 @@ class CardSettingsStore extends AbstractStoreModel<ICardSettingsStoreState> impl
 
   getExportData(dashboard: IDashboardConfig) {
     if (!this.elementId) {
-      ToastActions.showText('Requires element "id" prop: ' + this.elementId);
+      console.warn('Requires element "id" prop:', this.elementId);
       return;
     }
 
     const matches = this.elementId.split('@');
     if (matches.length !== 2) {
-      ToastActions.showText('Element index not found: ' + this.elementId);
+      console.warn('Element index not found:', this.elementId);
       return;
     }
 
@@ -95,7 +94,7 @@ class CardSettingsStore extends AbstractStoreModel<ICardSettingsStoreState> impl
     let elements = dashboard.elements;
 
     if (isNaN(index) || index >= elements.length || index < 0) {
-      ToastActions.showText('Element index invalid value: ' + index);
+      console.warn('Element index invalid value:', index);
       return;
     }
 
@@ -136,7 +135,7 @@ class CardSettingsStore extends AbstractStoreModel<ICardSettingsStoreState> impl
       Object.assign(dependencies, sources);
     }
     if (!dependencies || Object.keys(dependencies).length === 0 ) {
-      ToastActions.showText('Missing element dependencies');
+      console.warn('Missing element dependencies');
       return result;
     }
     const datasources = DataSourceConnector.getDataSources();
@@ -168,7 +167,7 @@ class CardSettingsStore extends AbstractStoreModel<ICardSettingsStoreState> impl
       let group = datasource;
       const values = datasources[datasource].store.state[dependencyProperty];
       if (values === null || typeof values === undefined) {
-        ToastActions.showText('Missing data: ' + datasource + ' ' + dependency);    
+        console.warn('Missing data:', datasource, dependency);
         return;
       }
       if (typeof values === 'object' || Array.isArray(values)) {
@@ -197,7 +196,7 @@ class CardSettingsStore extends AbstractStoreModel<ICardSettingsStoreState> impl
           queryId = dependencySource; // dialog case
         }
         if (!params.queries[queryId]) {
-          ToastActions.showText(`Unable to locate query id '${queryId}' in datasource '${dependencySource}'.`);
+          console.warn(`Unable to locate query id '${queryId}' in datasource '${dependencySource}'.`);
           return;
         }
         queryFn = params.queries[queryId].query;
@@ -231,7 +230,7 @@ class CardSettingsStore extends AbstractStoreModel<ICardSettingsStoreState> impl
             const args = datasources[datasource].plugin['lastArgs'];
             const arg = Object.keys(args).find(key => property === key);
             if (!arg) {
-              ToastActions.showText('Unable to find arg property: ' + property);
+              console.warn('Unable to find arg property:', property);
               return;
             }
             const argValue = args[arg] || '';
@@ -241,7 +240,7 @@ class CardSettingsStore extends AbstractStoreModel<ICardSettingsStoreState> impl
           } else {
             const datasourceId = Object.keys(datasources).find(key => source === key);
             if (!datasourceId) {
-              ToastActions.showText('Unable to find data source id: ' + source);
+              console.warn('Unable to find data source id:', source);
               return;
             }
             const resolvedValues = !property ? JSON.parse(JSON.stringify(datasources[datasourceId].store.state)) 
