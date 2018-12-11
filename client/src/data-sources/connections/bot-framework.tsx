@@ -1,12 +1,8 @@
 import * as React from 'react';
+import { IConnection, ConnectionEditor, IConnectionProps } from './Connection';
+import InfoDrawer from '../../components/common/InfoDrawer';
 import TextField from 'react-md/lib/TextFields';
 import Checkbox from 'react-md/lib/SelectionControls/Checkbox';
-import Card from 'react-md/lib/Cards/Card';
-import CardTitle from 'react-md/lib/Cards/CardTitle';
-import Avatar from 'react-md/lib/Avatars';
-import FontIcon from 'react-md/lib/FontIcons';
-import InfoDrawer from '../../components/common/InfoDrawer';
-import { IConnection, ConnectionEditor, IConnectionProps } from './Connection';
 
 export default class BotFrameworkConnection implements IConnection {
   type = 'bot-framework';
@@ -19,19 +15,15 @@ class BotFrameworkEditor extends ConnectionEditor<IConnectionProps, any> {
   render() {
     let { connection } = this.props;
     return (
-      <Card className="md-grid hide-borders">
-        <CardTitle 
-          title="Bot Framework" 
-          avatar={<Avatar icon={<FontIcon>receipt</FontIcon>} />} 
-          style={{ float: 'left'}}
-        />
+      <div>
+        <h2 style={{ float: 'left', padding: 9 }}>Bot Framework</h2>
         <InfoDrawer
           width={300}
           title="Bot Framework"
           buttonIcon="help"
           buttonTooltip="Click here to learn more about Bot Framework"
         >
-          <div className="md-toolbar-relative">
+          <div>
             <span>More about </span>
             <a href="https://dev.botframework.com" target="_blank">Bot Framework</a>
             <span> and </span>
@@ -56,7 +48,7 @@ class BotFrameworkEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['directLine'] || ''}
           lineDirection="center"
           placeholder="Fill in Direct Line secret key"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
         <TextField
@@ -65,7 +57,7 @@ class BotFrameworkEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['conversationsEndpoint'] || ''}
           lineDirection="center"
           placeholder="Conversations Endpoint"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
         <TextField
@@ -74,10 +66,10 @@ class BotFrameworkEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['webchatEndpoint'] || ''}
           lineDirection="center"
           placeholder="Webchat Endpoint"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
-      </Card>
+      </div>
     );
   }
 

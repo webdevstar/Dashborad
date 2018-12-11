@@ -43,6 +43,6 @@ class DialogsStore extends AbstractStoreModel<IDialogsStoreState> implements IDi
   }
 }
 
-const dialogsStore = alt.createStore<IDialogsStoreState>(DialogsStore as AltJS.StoreModel<any>, 'DialogsStore');
+const dialogsStore = alt.createStore<IDialogsStoreState>(DialogsStore, 'DialogsStore');
 
 export default dialogsStore;

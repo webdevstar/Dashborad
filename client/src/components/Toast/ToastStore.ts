@@ -70,6 +70,6 @@ class ToastStore extends AbstractStoreModel<IToastStoreState> implements IToastS
   }
 }
 
-const toastStore = alt.createStore<IToastStoreState>(ToastStore as AltJS.StoreModel<any>, 'ToastStore');
+const toastStore = alt.createStore<IToastStoreState>(ToastStore, 'ToastStore');
 
 export default toastStore;

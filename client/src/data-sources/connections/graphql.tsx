@@ -1,11 +1,7 @@
 import * as React from 'react';
-import Card from 'react-md/lib/Cards/Card';
-import CardTitle from 'react-md/lib/Cards/CardTitle';
-import Avatar from 'react-md/lib/Avatars';
-import FontIcon from 'react-md/lib/FontIcons';
-import TextField from 'react-md/lib/TextFields';
-import InfoDrawer from '../../components/common/InfoDrawer';
 import { IConnection, ConnectionEditor, IConnectionProps } from './Connection';
+import InfoDrawer from '../../components/common/InfoDrawer';
+import TextField from 'react-md/lib/TextFields';
 
 export default class GraphQLConnection implements IConnection {
   type = 'graphql';
@@ -28,23 +24,20 @@ class GraphQLConnectionEditor extends ConnectionEditor<IConnectionProps, any> {
   }
 
   render() {
+
     let { connection } = this.props;
     connection = connection || {};
 
     return (
-      <Card className="md-grid hide-borders">
-        <CardTitle 
-          title="GraphQL Connection" 
-          avatar={<Avatar icon={<FontIcon>receipt</FontIcon>} />} 
-          style={{ float: 'left'}}
-        />
+      <div>
+        <h2 style={{ float: 'left', padding: 9 }}>GraphQL Connection</h2>
         <InfoDrawer
           width={300}
-          title="GraphQL"
+          title="Authentication"
           buttonIcon="help"
-          buttonTooltip="Click here to learn more about GraphQL"
+          buttonTooltip="Click here to learn more about authentication"
         >
-          <div className="md-toolbar-relative">
+          <div>
             Just enter the URL of the GraphQL service you wish to query below.
             Currently only publicly accessible GraphQL endpoints are supported.
           </div>
@@ -55,10 +48,10 @@ class GraphQLConnectionEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['serviceUrl'] || ''}
           lineDirection="center"
           placeholder="Fill in Service URL"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
-      </Card>
+      </div>
     );
   }
 }

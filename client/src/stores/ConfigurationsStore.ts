@@ -2,7 +2,7 @@ import alt, { AbstractStoreModel } from '../alt';
 import * as _ from 'lodash';
 
 import connections from '../data-sources/connections';
-import { DataSourceConnector } from '../data-sources';
+import { DataSourceConnector, IDataSourceDictionary } from '../data-sources';
 import configurationActions from '../actions/ConfigurationsActions';
 
 export interface IConfigurationsStoreState {
@@ -159,7 +159,6 @@ class ConfigurationsStore extends AbstractStoreModel<IConfigurationsStoreState> 
   }
 }
 
-const configurationsStore = 
-  alt.createStore<IConfigurationsStoreState>(ConfigurationsStore as AltJS.StoreModel<any>, 'ConfigurationsStore');
+const configurationsStore = alt.createStore<IConfigurationsStoreState>(ConfigurationsStore, 'ConfigurationsStore');
 
 export default configurationsStore;

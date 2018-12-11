@@ -46,9 +46,9 @@ const getMetadata = (text) => {
 }
 
 const paths = () => ({
-  privateDashboard: path.join(__dirname, '..', 'dashboards','persistent','private'),
+  privateDashboard: path.join(__dirname, '..', 'dashboards'),
   preconfDashboard: path.join(__dirname, '..', 'dashboards', 'preconfigured'),
-  privateTemplate: path.join(__dirname, '..', 'dashboards','persistent', 'customTemplates')
+  privateTemplate: path.join(__dirname, '..', 'dashboards', 'customTemplates')
 });
 
 const isValidFile = (filePath) => {
@@ -63,38 +63,16 @@ const getFileContents = (filePath) => {
     : contents;
 }
 
-const ensureCustomFoldersExists = () => {
-  const { privateTemplate, privateDashboard } = paths();
-
-  if (!fs.existsSync(privateDashboard)) {
-
-    // Path separators could change depending on the platform
-    privateDashboard
-     .split(path.sep)
-     .reduce((currentPath, folder) => {
-       currentPath += folder + path.sep;
-       if (!fs.existsSync(currentPath)){
-         fs.mkdirSync(currentPath);
-       }
-       return currentPath;
-     }, '');
-  }
+const ensureCustomTemplatesFolderExists = () => {
+  const { privateTemplate } = paths();
 
   if (!fs.existsSync(privateTemplate)) {
-    privateTemplate
-     .split(path.sep)
-     .reduce((currentPath, folder) => {
-       currentPath += folder + path.sep;
-       if (!fs.existsSync(currentPath)){
-         fs.mkdirSync(currentPath);
-       }
-       return currentPath;
-     }, '');
+    fs.mkdirSync(privateTemplate);
   }
 }
 
 router.get('/dashboards', (req, res) => {
-  ensureCustomFoldersExists();
+
   const { privateDashboard, preconfDashboard, privateTemplate } = paths();
 
   let script = '';
@@ -156,6 +134,7 @@ router.get('/dashboards', (req, res) => {
     });
   }
 
+  ensureCustomTemplatesFolderExists();
   let customTemplates = fs.readdirSync(privateTemplate);
   if (customTemplates && customTemplates.length) {
     customTemplates.forEach((fileName) => {
@@ -216,7 +195,7 @@ router.get('/dashboards/:id*', (req, res) => {
 router.post('/dashboards/:id', (req, res) => {
   let { id } = req.params;
   let { script } = req.body || '';
-  ensureCustomFoldersExists();
+
   const { privateDashboard } = paths();
   let dashboardFile = getFileById(privateDashboard, id);
   let filePath = path.join(privateDashboard, dashboardFile);
@@ -234,7 +213,7 @@ router.post('/dashboards/:id', (req, res) => {
 router.get('/templates/:id', (req, res) => {
 
   let templateId = req.params.id;
-  let templatePath = paths().preconfDashboard;
+  let templatePath = path.join(__dirname, '..', 'dashboards', 'preconfigured');
 
   let script = '';
 
@@ -242,7 +221,7 @@ router.get('/templates/:id', (req, res) => {
 
   if (!templateFile) {
     //fallback to custom template
-    templatePath = paths().privateTemplate;
+    templatePath = path.join(__dirname, '..', 'dashboards', 'customTemplates');
     templateFile = getFileById(templatePath, templateId);
   }
   if (templateFile) {
@@ -275,7 +254,7 @@ router.put('/templates/:id', (req, res) => {
 
   const { privateTemplate } = paths();
 
-  ensureCustomFoldersExists();
+  ensureCustomTemplatesFolderExists();
 
   let templatePath = path.join(privateTemplate, id + '.private.ts');
   let templateFile = getFileById(privateTemplate, id);

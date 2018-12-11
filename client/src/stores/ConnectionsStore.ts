@@ -25,7 +25,6 @@ class ConnectionsStore extends AbstractStoreModel<IConnectionsStoreState> implem
   }
 }
 
-const connectionsStore = 
-  alt.createStore<IConnectionsStoreState>((ConnectionsStore as AltJS.StoreModel<any>), 'ConnectionsStore');
+const connectionsStore = alt.createStore<IConnectionsStoreState>(ConnectionsStore, 'ConnectionsStore');
 
 export default connectionsStore;

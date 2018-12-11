@@ -1,11 +1,7 @@
 import * as React from 'react';
-import TextField from 'react-md/lib/TextFields';
-import Card from 'react-md/lib/Cards/Card';
-import CardTitle from 'react-md/lib/Cards/CardTitle';
-import Avatar from 'react-md/lib/Avatars';
-import FontIcon from 'react-md/lib/FontIcons';
-import InfoDrawer from '../../components/common/InfoDrawer';
 import { IConnection, ConnectionEditor, IConnectionProps } from './Connection';
+import InfoDrawer from '../../components/common/InfoDrawer';
+import TextField from 'react-md/lib/TextFields';
 
 export default class AzureConnection implements IConnection {
   type = 'azure';
@@ -25,19 +21,15 @@ class AzureConnectionEditor extends ConnectionEditor<IConnectionProps, any> {
       'resource-group-create-service-principal-portal';
 
     return (
-      <Card className="md-grid hide-borders">
-        <CardTitle 
-          title="Azure Connection" 
-          avatar={<Avatar icon={<FontIcon>receipt</FontIcon>} />} 
-          style={{ float: 'left'}}
-        />
+      <div>
+        <h2 style={{ float: 'left', padding: 9 }}>Azure Connection</h2>
         <InfoDrawer 
           width={300} 
           title="Authentication"
           buttonIcon="help"
           buttonTooltip="Click here to learn more about authentications"
         >
-          <div className="md-toolbar-relative">
+          <div>
             Follow the instructions
             in <a href={servicePrincipalUrl} target="_blank">this link</a> to
             get <b>Service Principal ID</b> and <b>Service Principal Key</b>
@@ -51,7 +43,7 @@ class AzureConnectionEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['servicePrincipalId'] || ''}
           lineDirection="center"
           placeholder="Fill in Service Principal Id"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
         <TextField
@@ -60,7 +52,7 @@ class AzureConnectionEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['servicePrincipalKey'] || ''}
           lineDirection="center"
           placeholder="Fill in Service Principal Key"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
         
@@ -70,7 +62,7 @@ class AzureConnectionEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['servicePrincipalDomain'] || ''}
           lineDirection="center"
           placeholder="Fill in Service Principal Domain"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
         <TextField
@@ -79,10 +71,11 @@ class AzureConnectionEditor extends ConnectionEditor<IConnectionProps, any> {
           defaultValue={connection['subscriptionId'] || ''}
           lineDirection="center"
           placeholder="Fill in Subscription Id"
-          className="md-cell--stretch"
+          className="md-cell md-cell--bottom"
           onChange={this.onParamChange}
         />
-      </Card>
+        
+      </div>
     );
   }
 }

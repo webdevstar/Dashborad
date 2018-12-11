@@ -1,6 +1,6 @@
 import Settings from './Settings';
-import SettingsActions from './CardSettingsActions';
-import SettingsStore from './CardSettingsStore';
+import SettingsActions from './SettingsActions';
+import SettingsStore from './SettingsStore';
 
 export {
   Settings,

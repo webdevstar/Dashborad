@@ -29,7 +29,7 @@ const styles = {
     height: 'calc(100% - 200px)',
     width: 'calc(100% - 48px)',
     position: 'absolute'
-  } as React.CSSProperties
+  }
 };
 
 export default class QueryTester extends React.Component<IQueryTesterProps, IQueryTesterState> {
@@ -87,19 +87,15 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
   }
 
   render() {
-    const { showDialog, query, response, loadingData, responseExpanded } = this.state;
+    let { showDialog, query, response, loadingData, responseExpanded } = this.state;
 
     const dialogActions = [
       { onClick: this.submitQuery, primary: true, label: 'Run query' },
-      {
-        onClick: this.collapseResponse, primary: false, label: 'Collapse',
-        disabled: _.isEmpty(response) || !responseExpanded
-      },
-      {
-        onClick: this.expandResponse, primary: false, label: 'Expand',
-        disabled: _.isEmpty(response) || responseExpanded
-      },
-      { onClick: this.closeDialog, primary: false, label: 'Close' }
+{ onClick: this.collapseResponse, primary: false, label: 'Collapse', 
+            disabled: _.isEmpty(response) || !responseExpanded}, 
+            { onClick: this.expandResponse, primary: false, label: 'Expand',
+           disabled: _.isEmpty(response) || responseExpanded}, 
+            { onClick: this.closeDialog, primary: false, label: 'Close'}
     ];
 
     return (
@@ -110,13 +106,12 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
           visible={showDialog}
           onHide={this.closeDialog}
           dialogStyle={{ width: '60%', height: '90%' }}
-          lastChild={true}
-          renderNode={document.body}
+          style={{ zIndex: 99 }}
           title={
             (
               <div>Query tester
-                  <Button disabled icon style={{ height: '38px' }}
-                  href={'https://docs.loganalytics.io/index'} target="_blank">help
+                  <Button disabled icon style={{height: '38px'}} 
+                          href={'https://docs.loganalytics.io/index'} target="_blank">help
                   </Button>
               </div>
             )
@@ -125,13 +120,13 @@ export default class QueryTester extends React.Component<IQueryTesterProps, IQue
         >
           <TextField
             id="query"
-            label="Place your query here"
+            label= "Place your query here"
             defaultValue={query}
             paddedBlock
             onChange={this.onQueryChange}
           />
           <div style={styles.json}>
-            <JSONTree data={response} theme="default" shouldExpandNode={() => responseExpanded} />
+            <JSONTree data={response} theme="default" shouldExpandNode={() => responseExpanded}/>
           </div>
           {
             loadingData &&
