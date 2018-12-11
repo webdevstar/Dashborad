@@ -5,7 +5,6 @@ import { appInsightsUri } from './common';
 import ApplicationInsightsConnection from '../../connections/application-insights';
 import { DataSourceConnector, IDataSource } from '../../DataSourceConnector';
 import * as formats from '../../../utils/data-formats';
-import ConfigurationsStore from '../../../stores/ConfigurationsStore';
 
 let connectionType = new ApplicationInsightsConnection();
 
@@ -99,19 +98,19 @@ export default class ApplicationInsightsQuery extends DataSourcePlugin<IQueryPar
       });
     }
 
-    var dashboardId = ConfigurationsStore.getState().dashboard.id;
+    var url = `${appInsightsUri}/${appId}/query?timespan=${queryTimespan}`;
 
     return (dispatch) => {
       request(
-        '/applicationInsights/query', 
+        url, 
         {
           method: 'POST',
           json: true,
+          headers: {
+            'x-api-key': apiKey
+          },
           body: {
-            query,
-            queryTimespan,
-            appId,
-            dashboardId
+            query
           }
         }, 
         (error, json) => {
