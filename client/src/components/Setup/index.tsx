@@ -105,15 +105,11 @@ export default class Setup extends React.Component<any, ISetupState> {
   fixRedirectUrl(redirectUrl: string): string {
     if (redirectUrl) { return redirectUrl; }
 
-    let host = '';
-    if (window && window.location) {
-      host = window.location.host;
-    }
-
+    let host = window.location.host;
     let protocol = 'https:';
 
     // On localhost, authentication requests go directly to port 4000
-    if (host === '' || host === 'localhost:3000' || host === 'localhost:4000') { 
+    if (host === 'localhost:3000' || host === 'localhost:4000') { 
       host = 'localhost:4000'; 
       protocol = 'http:';
     }
@@ -180,9 +176,7 @@ export default class Setup extends React.Component<any, ISetupState> {
   }
 
   redirectOut() {
-    if (window && window.location) {
-      window.location.replace('/'); 
-    }
+    window.location.replace('/'); 
   }
 
   onRemoveAdmin(admin: string) {

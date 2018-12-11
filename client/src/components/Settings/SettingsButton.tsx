@@ -12,6 +12,8 @@ import FontIcon from 'react-md/lib/FontIcons';
 import { ToastActions } from '../Toast';
 
 import ConnectionsSettings from './ConnectionsSettings';
+import ElementsSettings from './ElementsSettings';
+import DatasourceSettings from './DatasourceSettings';
 import SettingsStore, { ISettingsStoreState } from '../../stores/SettingsStore';
 import SettingsActions from '../../actions/SettingsActions';
 import ConfigurationsActions from '../../actions/ConfigurationsActions';

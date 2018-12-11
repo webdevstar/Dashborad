@@ -27,14 +27,6 @@ function mockRequests() {
         window.dashboard = dashboard || null;
       })(window);
     `);
-
-    nock('http://localhost')
-    .get('/api/dashboard/id')
-    .reply(200, `
-     
-          return ${JSON.stringify(dashboard)};
-      
-    `);
 }
 export {
   mockRequests
