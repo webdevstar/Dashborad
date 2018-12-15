@@ -4,15 +4,21 @@ import FontIcon from 'react-md/lib/FontIcons';
 
 import icons from '../../constants/icons';
 
+const styles = {
+  list: {
+    height: '136px',
+  } as React.CSSProperties
+};
+
 interface IIconPickerProps {
-  defaultLabel?: string;
   defaultIcon?: string;
-  listStyle?: React.CSSProperties;
+  defaultLabel?: string;
 }
 
 interface IIconPickerState {
   label: string;
   icon: string;
+  filterType: any;
 }
 
 export default class IconPicker extends React.Component<IIconPickerProps, IIconPickerState> {
@@ -20,7 +26,6 @@ export default class IconPicker extends React.Component<IIconPickerProps, IIconP
   static defaultProps = {
     defaultLabel: 'Search icons',
     defaultIcon: 'dashboard',
-    listStyle: {},
   };
 
   static listItems: any = [];
@@ -33,6 +38,7 @@ export default class IconPicker extends React.Component<IIconPickerProps, IIconP
     this.state = {
       label: defaultLabel,
       icon: defaultIcon,
+      filterType: Autocomplete.caseInsensitiveFilter,
     };
 
     this.onChange = this.onChange.bind(this);
@@ -41,7 +47,7 @@ export default class IconPicker extends React.Component<IIconPickerProps, IIconP
   getIcon() {
     const { icon } = this.state;
     // check icon value is valid
-    if (icons.findIndex(i => i === icon) > 0) {
+    if ( icons.findIndex(i => i === icon) > 0 ) {
       return icon;
     }
     return 'dashboard';
@@ -49,13 +55,12 @@ export default class IconPicker extends React.Component<IIconPickerProps, IIconP
 
   componentWillMount() {
     if (IconPicker.listItems.length === 0) {
-      IconPicker.listItems = icons.map((icon) => ({ icon, leftIcon: <FontIcon key="icon">{icon}</FontIcon> }));
+      IconPicker.listItems = icons.map((icon, i) => ({ icon, leftIcon: <FontIcon key="icon">{icon}</FontIcon> }));
     }
   }
 
   render() {
-    const { label, icon } = this.state;
-    const { listStyle } = this.props;
+    const { label, filterType, icon } = this.state;
     return (
       <Autocomplete
         id="icon"
@@ -63,7 +68,7 @@ export default class IconPicker extends React.Component<IIconPickerProps, IIconP
         className="md-cell--stretch"
         data={IconPicker.listItems}
         dataLabel={'icon'}
-        listStyle={listStyle}
+        listStyle={styles.list}
         value={icon}
         onChange={this.onChange}
         onAutocomplete={this.onChange}
