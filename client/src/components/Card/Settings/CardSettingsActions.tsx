@@ -9,6 +9,9 @@ interface ICardSettingsActions {
 }
 
 class CardSettingsActions extends AbstractActions implements ICardSettingsActions {
+  constructor(alt: AltJS.Alt) {
+    super(alt);
+  }
 
   openDialog(title: string, elementId: string) {
     return {title, elementId};

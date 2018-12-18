@@ -10,8 +10,8 @@ class RefreshActions extends AbstractActions implements IRefreshActions {
     
   private runningRefreshInterval: any;
 
-  constructor(altobj: AltJS.Alt) {
-    super(altobj);
+  constructor(alt: AltJS.Alt) {
+    super(alt);
 
     this.setRefreshTimer = this.setRefreshTimer.bind(this);
   }

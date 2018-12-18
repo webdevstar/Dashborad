@@ -62,12 +62,12 @@ export function timeline(
   const { timeField, lineField, valueField } = args;
   const prefix = getPrefix(format);
   let values = state[args.data || 'values'];
-  const timelineSourceValues = values;
+  const timeline = values;
 
   let _timeline = {};
   let _lines = {};
 
-  timelineSourceValues.forEach(row => {
+  timeline.forEach(row => {
     let timestamp = row[timeField];
     let lineFieldValue = lineField === undefined ? valueField : row[lineField];
     let valueFieldValue = row[valueField];

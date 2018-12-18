@@ -10,6 +10,9 @@ interface IEditorActions {
 }
 
 class EditorActions extends AbstractActions implements IEditorActions {
+  constructor(alt: AltJS.Alt) {
+    super(alt);
+  }
 
   openDialog() {
     return {};

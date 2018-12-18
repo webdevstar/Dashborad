@@ -9,6 +9,10 @@ interface IAccountActions {
 }
 
 class AccountActions extends AbstractActions implements IAccountActions {
+  
+  constructor(alt: AltJS.Alt) {
+    super(alt);
+  }
 
   updateAccount() {
 
