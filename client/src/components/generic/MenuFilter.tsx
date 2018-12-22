@@ -55,7 +55,7 @@ export default class MenuFilter extends GenericComponent<any, any> {
 
   static fromSource(source: string) {
     return {
-      selectedValues: GenericComponent.sourceFormat(source, 'values-selected'), 
+      selectedValue: GenericComponent.sourceFormat(source, 'values-selected'), 
       values: GenericComponent.sourceFormat(source, 'values-all')
     };
   }
